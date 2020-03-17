@@ -1,4 +1,5 @@
 # LAS-Model
+### This code is associated with the paper from Liou et al., "A model for focal seizure onset, propagation, evolution, and progression". eLife, 2020. http://dx.doi.org/10.7554/eLife.50927
 
 Focal seizure model
 Author: Jyun-you Liou et al. 
