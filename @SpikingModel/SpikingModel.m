@@ -52,11 +52,16 @@ classdef SpikingModel < SpikingNetwork
             
             % Collect input from 'Projection'
             for i = 1:numel(O.Proj.In) % So the maximum of O.Input is W0 * f_max
+                % tw: why is Value divided by tau_syn? this is apparently
+                % related to synaptic filtering...
                 O.Input.(O.Proj.In(i).Type) = O.Input.(O.Proj.In(i).Type) + ...
                                               O.Proj.In(i).Value ./ O.param.tau_syn.(O.Proj.In(i).Type);
             end
             
             % ----- Update equation 1 (membrane potential) -----
+            % tw: total conductance at this exact moment during update; see
+            % Larry's book, Appendix 5.11
+            % tw: not clear why some are divided by f_max and some are not?
             g_sum = O.param.g_L + ...
                     O.Input.E ./ O.param.f_max + ...
                     O.Input.I ./ O.param.f_max + ...
@@ -69,33 +74,86 @@ classdef SpikingModel < SpikingNetwork
                      O.Input.I ./ O.param.f_max .* E_Cl + ...  
                      O.g_K ./ O.param.f_max .* O.param.E_K + ...
                      I_ext) ./ g_sum;  
-                 
+            
+            % tw: this is the effective time constant for a *tiny* slice of
+            % time; i.e. if nothing changes and conductances were held the
+            % same, the membrane would try to relax to V_inf; this value
+            % describes the time to relaxaton
             tau_V_eff = O.param.C./g_sum;
-
+            
+            % tw: this is in the infinity notation that I can't understand;
+            % that said, the equation clearly says that, from V_inf plus
+            % perturbation, you quickly (per tau_V_eff) back to V_inf; this
+            % is only a first order equation over *very* short time scales;
+            % see Abbott Theoretical neuroscience book equation 5.48
+            % (assuming time scale short enough that conductances and
+            % injective current are constant)
             O.V = V_inf + (O.V - V_inf).*(exp(-dt./tau_V_eff));   
             
             % ----- Update equation 2 (threshold dynamics) -----
+            % tw: threshold decays exponentially, but suddenly shoots up by
+            % delta_phi_0 when action potential detected on last update
             O.phi = O.param.phi_0 + (O.phi - O.param.phi_0).*(exp(-dt./O.param.tau_phi)) + ... % Exponential decay part
                     O.param.delta_phi(O.phi-O.param.phi_0) .* O.S.S; % Dirac pulse part
 
             % ----- Update equation 3 (chloride dynamics) ------ 
+            % tw: for neurons that spiked last round, O.S.dT is 0 and T_AP
+            % is 0.5 (i.e. O.param.dt_AP); T_AP for all other neurons is <0
             T_AP = O.param.dt_AP - O.S.dT; % How much time spent for action potential
+            % tw: T_AP>0 retrieves indices of neurons that spiked on last
+            % round; after next line, T_AP has 0 for all neurons that did
+            % not spike on last round and 0.5 for all that did--the time
+            % required for the AP
             T_AP = T_AP .* (T_AP>0);
+            % tw: T_non_AP computes time in dt not taken up by AP
             T_non_AP = dt - T_AP; % How much time not spent for action potential
+            % tw: Veff is the average membrane potential across the dt
+            % interval, were membrane potential is clamped at O.param.V_AP
+            % for duration for AP and then returns to prior value
             Veff = T_AP.*O.param.V_AP./dt + ...
                    T_non_AP.*O.V./dt; % effective membrane potential 
-            Faraday = 96500;               
+            Faraday = 96500;
+            % tw: two things: 1. appears to be a sign issue -- it's
+            % beecause E_Cl-Veff was replaced with Veff-E_Cl and 2.
+            % O.Input.I appears to be used wholesale as conductance, which
+            % doesn't necessarily make sense? It's true from a unit
+            % analysis point of view: Input.I is in nS
             Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*O.Input.I.*(Veff-E_Cl) + O.param.Cl_in_eq);
+            % tw: Cl again decays in linear fasion
             O.Cl_in = Cl_in_inf + (O.Cl_in - Cl_in_inf).*(exp(-dt./O.param.tau_Cl));   
-
-            % ----- Update equation 4 (sAHP dynamics) ----------
-            O.g_K = O.g_K .* exp(-dt ./ O.param.tau_K) + O.param.g_K_max.*O.S.S./O.param.tau_K;    
            
+            % ----- Update equation 4 (sAHP dynamics) ----------
+            % tw: this clearly mimics the mean field model, although even
+            % in the mean field model, I'm not sure that I understand how
+            % this is working...
+            
+            % tw: units--O.param.g_K_max (nS), O.S.S (no. spikes),
+            % O.param.tau_K (ms); 
+            
+            % tw: be aware that the unit here is not nS! 
+            % g_K variable actually tracks g_K (in nS) * f_max
+            
+            O.g_K = O.g_K .* exp(-dt ./ O.param.tau_K) + O.param.g_K_max.*O.S.S./O.param.tau_K;    
+               
+            if sum(O.S.S)>15
+                keyboard
+            end
+            
             % ######### Generate spikes #########
             % Notice in numeric simulation, dirac function should take a value so that delta * dt = 1
+            % tw: first line uses the O.param.f function to determine spike
+            % probability; if O.param.f > 1 kHz, will always generate spike
+            % in 1ms as rand is uniform distribution on interval [0,1]; at
+            % the end of the day p(Spike) is f (kHz) * t (ms)
             Spike = O.param.f(O.V - O.phi)*dt > rand(O.n); % Spike generation
+            % tw: look at time since last spike, if less than refractory
+            % period, need to wait prior to spike generation, even if
+            % otherwise would have generated a spike
             Spike(O.S.dT < O.param.T_refractory) = 0; % Remove the spike if still refractory
+            % tw: membraine potential drops/resets after spiking event
+            % during this round; in particular, drops by 20 mV
             O.V(Spike) = O.param.V_reset(O.V(Spike)); % Reset membrane potential
+            % tw: save who spikes this round
             O.S.S = Spike; % Save it
             
             % ######### Calculate all S-derived variables ######### 
@@ -103,7 +161,10 @@ classdef SpikingModel < SpikingNetwork
             % in the same cycle is because Dirac function cause step from 
             % the right limit, not the left limit. 
             % Refractory period: .dT - when the neurons spike last time
+            % tw: every neuron has another second since prior spike
             O.S.dT = O.S.dT + dt;
+            % tw: second, if you just spiked, time since last spike
+            % (O.S.dT) is reset to zero
             O.S.dT(O.S.S) = 0;
   
             % Short-term plasticity variables: .x & .u can affect effective
@@ -120,10 +181,13 @@ classdef SpikingModel < SpikingNetwork
                     O.S.x = 1 - (1-O.S.x).*exp(-dt./O.param.tau_D) - O.param.U.*O.S.x.*O.S.S;
                 end
             else
+                % tw: output value here is boolean: spike or not
                 [O.Proj.Out.Value] = deal(O.S.S); % Send to .Proj.Value 'rate'
             end
             
-            % Filter the synaptic input (required for spiking network)          
+            % Filter the synaptic input (required for spiking network)
+            % tw: appears to just be exponential decay of current input
+            % back to 0 (prior to next round when more input is added)
             O.Input.E = O.Input.E.*exp(-dt./O.param.tau_syn.E);
             O.Input.I = O.Input.I.*exp(-dt./O.param.tau_syn.I);
             
@@ -139,25 +203,45 @@ classdef SpikingModel < SpikingNetwork
             %
             % Final update: 2016/12/12
             % Load parameters & initial conditions    
+            
+            % tw: load and adjust all parameters for network
             eval(template);
+            
+            % tw: the next line is where the instance is actually created;
+            % the instance inherits all properties from SpikingNetwork and
+            % NeuralNetwork
             VarList = who;
+            
+            % tw: this code takes all of the variables generated by
+            % "template" above and divvies them into subfields of O
             for i = 1:numel(VarList)
                 if any(strcmp(VarList{i},O.VarName)) % Initial conditions of dynamical variables
+                    % tw: assigns dynamical variable to their own fields
                     O.(VarList{i}) = eval(VarList{i});
                 elseif strcmp(VarList{i},'n') % Size of the network
+                    % tw: carries forward n
                     O.n = eval(VarList{i});                    
                 else % Parameters
-                    O.param.(VarList{i}) = eval(VarList{i});
+                    % tw: assigns non-dynamical variables (aka model
+                    % parameters) to O.param
+                    O.param.(VarList{i}) = eval(VarList{i}); 
                 end              
             end
             
             %% Set firing-associated dynamical variables 
+            % tw: S is the container for spike associated data; S is
+            % inherited from class SpikingNetwork
             O.S.S = false(O.n); % Logical value, decide whether there is a spike or not
             O.S.dT = zeros(O.n); % The previous spike            
+            % tw: x is related to output from Misha's/Larry's models
             O.S.x = ones(O.n); % short-term plasticity variables
+            % tw: U is related to calcium concentration/influx
             O.S.u = O.param.U; % short-term plasticity variables
             
             %% Set acceptable input types 
+            % tw: Input field is defined in and inherited from class
+            % NeuralNetwork; appears to reflect input to each neuron
+            % (excitatory, inhibitory, etc.) with each model update cycle
             O.Input.E = zeros(O.n);
             O.Input.I = zeros(O.n);
         end

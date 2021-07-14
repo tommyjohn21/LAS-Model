@@ -41,6 +41,7 @@ function F = AttachHotKey( O, varargin )
 
 % For multiple inputs
 if numel(O)>1
+    keyboard % tw: haven't seen but appears to be a recursive call
     for i = numel(O):-1:1
         F(i) = AttachHotKey(O(i), varargin);
     end
@@ -55,6 +56,10 @@ addParameter(p,'ParameterRule',[]);
 addParameter(p,'Flag',false);
 addParameter(p,'Mode','stimulation'); % What intervention you are giving to the network
                                       % Options: 'stimulation', 'zap', 'delta', 'clamp'
+
+% tw: the following appears to set a series of ?default parameters for
+% stimulation
+
 % Set Stimulation parameters
 amp_stimulus = 1000; % amplitude of stimulation
 t_stimulus = [0 10 20]; % Biphasic stimulation
@@ -85,9 +90,12 @@ F = O.Graph;
 F.UserData = p.Results; % Put the hotkey parameters into Figure.UserData
 
 % Hot Key settings
+% tw: this appears to be where the keyboard callbacks for real-time
+% plotting live
 F.KeyPressFcn = {@HotKeyCallback,O};
     function HotKeyCallback(src,evd,O)
         % src is the figure handle
+        keyboard % tw: haven't gotten to this 7/9/21
         switch evd.Key
             case 'space' % Pause & Continue
                 if src.UserData.Pause;uiresume(src);else;uiwait(src);end
@@ -160,6 +168,7 @@ F.KeyPressFcn = {@HotKeyCallback,O};
 % Mouse Callback functions (Give stimulation, delta, or clamp) at 'axes'
 set(F.Children,'ButtonDownFcn',{@MouseClickCallback,O});                
     function MouseClickCallback(src,evd,O)
+        keyboard % tw: have not gone through; this funciton is performed when you click on any of the axes
         P = evd.IntersectionPoint; % Intervention position (Px, Py, Pz)
         P = P(1:2);
         P2_original = P(2); % This will only be used for 'clamp' mode 
@@ -206,6 +215,7 @@ set(F.Children,'ButtonDownFcn',{@MouseClickCallback,O});
     end
 
     function MouseClickCallbackFinishZap(src,~,Iext)
+        keyboard % tw: have not debugged 7/9/21
         Fig = src.Parent; % This parent figure
         Iext.Tmax = -inf;
         disp('Finish zapping.');

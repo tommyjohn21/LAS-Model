@@ -171,6 +171,7 @@ classdef ExternalInput < matlab.mixin.Copyable % ExternalInput inherit shallow c
             end
             O = E.Target;
             if ~isempty(E.Tmax) && O.t > E.Tmax
+                keyboard % tw: have not yet had an ExternalInput expire 7/9/21
                 delete(E)
                 disp('An ExternalInput instance has expired & deleted.')
             end

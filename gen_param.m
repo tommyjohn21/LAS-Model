@@ -7,6 +7,10 @@ function [ output ] = gen_param(mu,sigma,m,flag)
 % This function is called by all neural field template script
 % Author: Jyun-you Liou
 % Final update: 2016/05/18
+
+% tw: this script draws from a distribution given by flag; number of draws
+% is determined by m; if sigma == 0
+
 if nargin < 4
     flag = 0;
 end

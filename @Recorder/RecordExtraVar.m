@@ -29,10 +29,12 @@ switch VarName
         % Step 1B: Add the recurrent projection
         for i = 1:numel(O.Proj.In) 
             if O.Proj.In(i).Type == 'E'
+            % tw: the formula below is not at all clear to me
             g = g + O.Proj.In(i).Value ./ O.param.tau_syn.E;
             end
         end
         % Step 2: Calculate EPSCs
+        % tw: the formula below is not at all clear to me
         R.Var.EPSC(:,R.Idx) = g .* (O.param.E_Esyn-O.V) ./ O.param.f_max;
     case 'IPSC'
         % Due to poor program flow design, unfortunately we need to
@@ -42,10 +44,13 @@ switch VarName
         % Step 1B: Add the recurrent projection
         for i = 1:numel(O.Proj.In) 
             if O.Proj.In(i).Type == 'I'                
+            % tw: the formula below is not at all clear to me, although
+            % does appear to be summing all inhibitory inputs
             g = g + O.Proj.In(i).Value ./ O.param.tau_syn.I;
             end
         end
         % Step 2: Calculate PSCs
+        % tw: the formula below is not at all clear to me
         E_Cl = 26.7*log(O.Cl_in./O.param.Cl_ex);                        
         R.Var.IPSC(:,R.Idx) = g .* (E_Cl-O.V) ./ O.param.f_max;
 end

@@ -13,6 +13,9 @@ function Project(P)
 %% Projection
 for i = 1:numel(P)
     
+    % tw: P(i).Value contains the boolean spiking values for the current
+    % time step
+    
     % Strength of each pre-synaptic neuron
     if ~isempty(P.WPre) && any(P.WPre(:) ~= 1)                 
         P(i).Value = P(i).WPre .* P(i).Value; 
@@ -22,6 +25,7 @@ for i = 1:numel(P)
     % distributed, use the correspondent method
     switch lower(P(i).Method)
         case 'convolution'
+            % tw: raw number of spikes convolved with Gaussian
             P(i).Value = conv2_field(P(i).Value, ...
                                      P(i).W, ...
                                      P(i).Target.n, ...
@@ -34,7 +38,8 @@ for i = 1:numel(P)
     end
     
     % Strength of each post-synaptic receptors                
-    if ~isempty(P.WPost) && any(P.WPost(:) ~= 1) 
+    if ~isempty(P.WPost) && any(P.WPost(:) ~= 1)
+        % tw: scale neural output by conductance (WPost)
         P(i).Value = P(i).Value .* P.WPost;
     end
 end

@@ -122,17 +122,26 @@ classdef Projection < handle
             % Check whether func has the right format
             if nargin(func)~=1;error('The kernel function can only have one input (relative position).');end
             % Sample from the function 'func'
+            % tw: create meshgrid to index positions in (relative)
+            % positions in kernel; this naturally runs from -2.5*SD to
+            % 2.5*SD
             [x2,x1] = meshgrid(-p.Results.KerSize(2)+1:p.Results.KerSize(2)-1, ...
                                -p.Results.KerSize(1)+1:p.Results.KerSize(1)-1);
+            % tw: assign a (relative) value to each (relative) position
+            % using your func rule
             K = func([x1(:),x2(:)]); % Sample it
+            % tw: set total weight/AUC of kernel to 1
             K = K/sum(K(:)); % Normalization
             if p.Results.N > 0  % When stochastic resampling is requested
+                keyboard % tw: I don't know what this code does; putting stop here for now 7/7/21
                 K = ResamplePMF( K, p.Results.N );
             end
             K = reshape(K,size(x1)); % Change it back to its shape
             % Set the corresponding parameters in P
             P.Method = 'convolution';
+            % tw: total weight of output matrix is 1
             P.W = K;
+            % tw: we'll see how this plays out re: STDP?
             P.STDP.Enabled = false; % STDP learning rule is not compatible with convolution
             P.UserData.Wfunc = func;% Save the information            
         end
@@ -241,6 +250,10 @@ classdef Projection < handle
     end
 
     methods % Quick change of weight distributions
+        % tw: putting on pause since I haven't explored it 7/7/21; this
+        % function/code is stored separately in
+        % @Projection/AdjustWeight.mat, and I have keyboarded it so that it
+        % cannot run without review
         P = AdjustWeight( P, varargin )        
     end
     
@@ -273,17 +286,36 @@ classdef Projection < handle
             if ~isa(Oi,'NeuralNetwork') || ~isa(Oj,'NeuralNetwork')
                 error('Inputs need to belong to class or subclasses of NeuralNetwork.');
             end
+            
+            % tw: in the case where O == Oi == Oj, this is projection from
+            % the network back to itself; why does P need to save a copy of
+            % the network? tbd
             P.Source = Oi;
             P.Target = Oj;
+            
+            % tw: in each NeuralNetwork, a copy of P is stored (written as
+            % Oi sending projections to Oj)
             Oi.Proj.Out = [Oi.Proj.Out;P];
             Oj.Proj.In = [Oj.Proj.In;P];            
-            n = P.Source.n;
-            P.WPre = ones(n);
-            m = P.Target.n;
-            P.STDP.W = ones(prod(m),prod(n));
+            
+            n = P.Source.n; % tw: number of source neurons
+            P.WPre = ones(n); % tw: weight of each source neuron
+            m = P.Target.n; % tw: number of target neurons
+            
+            % tw: "weight" of STDP; this strikes me as related to the
+            % matrix of connectivity seen in Fig 5
+            P.STDP.W = ones(prod(m),prod(n)); 
+            
+            % tw: container for spike train used for STDP learning,
+            % separated by depression/potentiation
             P.S.LTP = zeros(n);
             P.S.LTD = zeros(m);
-            % Save varargin into properties
+            
+            % Save varargin into properties 
+            % tw: aside from inputParser,this appears to just be a
+            % different way to parse inputs into a structure...it does not
+            % check if any key-value pairs don't make sense (it simply
+            % assigns them)
             n_var = numel(varargin);
             for i = 1:(n_var/2)
                 PropertyName = varargin{(i-1)*2 + 1};

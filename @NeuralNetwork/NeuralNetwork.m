@@ -1,7 +1,7 @@
 classdef NeuralNetwork < handle & matlab.mixin.Heterogeneous
     % NeuralNetwork is a Superclass of fundamental building unit of this 
     % simulation package.  To build a functional NeuralNetwork, you need to
-    % call any of the subtypes of NeuralNetwork to that the computation
+    % call any of the subtypes of NeuralNetwork so that the computation
     % methods, ... etc. will be loaded.  Directly call NeuralNetwork won't
     % give a functional NeuralNetwork.
     %
@@ -112,6 +112,8 @@ classdef NeuralNetwork < handle & matlab.mixin.Heterogeneous
                 IndividualModelUpdate(O(i),dt);
             end
             % Step 2: Calculate its output and save it for additional input
+            % tw: Project takes in number of spikes and turns into
+            % input for next round
             for i = 1:numel(O) % Each NeuralNetwork
                 for j = 1:numel(O.Proj.Out) % Each Projection of a NeuralNetwork
                     Project(O(i).Proj.Out(j));
@@ -121,6 +123,7 @@ classdef NeuralNetwork < handle & matlab.mixin.Heterogeneous
             for i = 1:numel(O) % Each NeuralNetwork
                 for j = 1:numel(O.Proj.Out) % Each Projection of a NeuralNetwork
                     if O(i).Proj.Out(j).STDP.Enabled % If the switch is true, then learn.
+                        keyboard % tw: this is for plasticity piece and you want it to catch your eye 7/14/21
                         RealTimeSTDPLearning(O(i).Proj.Out(j),dt);
                     end
                 end
@@ -222,6 +225,7 @@ classdef NeuralNetwork < handle & matlab.mixin.Heterogeneous
             % Final update: 2016/12/26
             for i = 1:numel(O)
                 if nargin < 2 % Use 5% of RAM to record 
+                    keyboard % tw: haven't seen this yet 7/8/21
                     [~,sV] = memory;
                     N = 0.05*sV.PhysicalMemory.Available/8; % Available slots
                     N=N/ prod(O(i).n);

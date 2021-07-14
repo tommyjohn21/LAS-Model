@@ -3,6 +3,8 @@
 % the recordings so that the two looks alike)
 
 % Lay out the field
+% tw: build the model used in this experiment with params set in
+% Exp1Template
 O = MeanFieldModel('Exp1Template');
 
 % Build the round mask (round boundary condition)
@@ -11,6 +13,8 @@ xx = xx/O.n(2); % Normalized spatial unit
 yy = yy/O.n(1); % Normalized spatial unit
 rr = sqrt(xx.^2 + yy.^2); % Normalized spatial unit
 mask = rr < 0.5; % The easiest way to apply mask is to redefine its activation function    
+% tw: as firing rates are updates via O.param.f, new activation function is
+% applied via mask above, so that outside of boundary, firing is always 0
 f_original = O.param.f;
 O.param.f = @(v) mask.*f_original(v); % Now neurons outside the boundary can not fire
 

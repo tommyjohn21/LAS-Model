@@ -131,6 +131,9 @@ classdef Recorder < handle
                     warning(['The variable ' varargin{i} ' has been defined.  No need to redefine it.']);
                     continue;
                 end
+                % tw: somehow by adding a field to R.Var, R.VarName is
+                % updated; R.VarName is a dependent property, it has a get
+                % method in this script to determine how it is updated
                 R.Var.(varargin{i}) = nan(prod(R.Parent.n),R.Capacity);
             end
         end
@@ -231,6 +234,8 @@ classdef Recorder < handle
             if numel(O) > 1;error('To create multiple recorders for a bunch of NeuralNetwork, please use CreateRecorder(NeuralNetwork,Capacity)');end
             if ~isa(O,'NeuralNetwork');error('Recorder can only be created and associated with a NeuralNetwork.');end
             % Register them together
+            % tw: apparently by changing R you also change the value in
+            % O.Recorder, so O now saves a copy of itself?
             O.Recorder = R; 
             R.Parent = O;
             % Capacity & time vector
@@ -247,7 +252,8 @@ classdef Recorder < handle
             %                    because: .f is a function of V & phi
             %                             .dT, .u, .x, are just filtered
             %                             version of .SBuffer
-            R.SBuffer = cell(1,N); % Each cell record what neurons fire.  The 
+            % tw: record of what cells fire at what time, stored as cells
+            R.SBuffer = cell(1,N); % Each cell records what neurons fire.  The 
                              % index of the cell array indicates its index 
                              % in .T vector 
             % Default listener: if .Idx is larger than capacity, it will

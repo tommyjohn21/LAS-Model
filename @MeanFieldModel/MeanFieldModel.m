@@ -141,7 +141,10 @@ classdef MeanFieldModel < RateNetwork
             % Load parameters & initial conditions    
             eval(template);
             VarList = who;
+            % tw: object created here because next FOR block involves
+            % manipulation of object properties
             for i = 1:numel(VarList)
+                % tw: this block simply assigns values to object properties
                 if any(strcmp(VarList{i},O.VarName)) % Initial conditions of dynamical variables
                     O.(VarList{i}) = eval(VarList{i});
                 elseif strcmp(VarList{i},'n') % Size of the network
@@ -152,11 +155,15 @@ classdef MeanFieldModel < RateNetwork
             end
             
             %% Set firing-associated dynamical variables 
+            % tw: this block simply assigns values to object properties (R
+            % inherited from RateNetwork class)
             O.R.f = zeros(O.n); % firing rate         
             O.R.x = ones(O.n); % short-term plasticity variables
             O.R.u = O.param.U; % short-term plasticity variables
             
             %% Set acceptable input types 
+            % tw: this block simply assigns values to object properties
+            % (Input inherited from NeuralNetwork class)
             O.Input.E = zeros(O.n);
             O.Input.I = zeros(O.n);
         end

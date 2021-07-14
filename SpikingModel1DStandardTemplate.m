@@ -16,6 +16,10 @@ n = [2000,1]; % Number of neurons
 % ------------- Equation 1 ---- Membrane potential ------------------------
 V = gen_param(-57,0,n,0); % Initial membrane potential
 C = gen_param(100,0,n,1); % Cell capacitance, NeuroElectro median 100 pF, highly variable
+
+% tw: despite flag for C of 1 indicating gamma distribution in gen_param,
+% sigma of zero means that all values of 100; the same is true below
+
 % Leaky conductance
 g_L=gen_param(4,0,n,1); % NeuroElectro: mean input resistence = 300 M
 E_L=gen_param(-57,0,n,0); % NeuroElectro: Resting membrane potential -62 mV
@@ -76,6 +80,10 @@ Cl_in = Cl_in_eq;
 
 % ------------- Equation 4 ---- slow afterhyperpolarization ---------------
 tau_K = gen_param(5000,0,[n,1],1); % Can also be function
+% gK_max in nS
 g_K_max = gen_param(40,0,n,1); % maximal g_K while every T_refractory the neuron emits a spike
 E_K = gen_param(-90,0,n,0);
-g_K = zeros(n);
+% tw: be aware that the unit here is not nS! 
+% to initialize actual g_K in units of nS, need to use: g_K (in nS) *
+% f_max, since g_K variable actually tracks g_K (in nS) * f_max
+g_K = zeros(n);  

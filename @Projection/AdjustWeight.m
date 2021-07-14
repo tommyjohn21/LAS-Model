@@ -13,6 +13,9 @@ function P = AdjustWeight( P, varargin )
 p = inputParser;
 parse(p,varargin{:});
 
+% tw: keyboarding becasue I have not gone through this code yet 7/7/21
+keyboard
+
 Value_safe_copy = P.Value;
 Os = P.Source;
 P.Value = ones(Os.n);
