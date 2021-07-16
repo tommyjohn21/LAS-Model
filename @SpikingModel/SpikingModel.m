@@ -85,7 +85,7 @@ classdef SpikingModel < SpikingNetwork
             Veff = T_AP.*O.param.V_AP./dt + ...
                    T_non_AP.*O.V./dt; % effective membrane potential 
             Faraday = 96500;               
-            Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*O.Input.I.*(Veff-E_Cl) + O.param.Cl_in_eq);
+            Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*(O.Input.I./O.param.f_max).*(Veff-E_Cl) + O.param.Cl_in_eq);
             O.Cl_in = Cl_in_inf + (O.Cl_in - Cl_in_inf).*(exp(-dt./O.param.tau_Cl));   
 
             % ----- Update equation 4 (sAHP dynamics) ----------

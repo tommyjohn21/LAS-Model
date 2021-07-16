@@ -87,7 +87,7 @@ classdef MeanFieldModel < RateNetwork
             
             % ----- Update equation 3 (chloride dynamics) ------ 
             Faraday = 96500;               
-            Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*O.Input.I.*(O.V-E_Cl) + O.param.Cl_in_eq);
+            Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*(O.Input.I./O.param.f_max).*(O.V-E_Cl) + O.param.Cl_in_eq);
             O.Cl_in = Cl_in_inf + (O.Cl_in - Cl_in_inf).*(exp(-dt./O.param.tau_Cl));   
 
             % ----- Update equation 4 (sAHP dynamics) ----------
