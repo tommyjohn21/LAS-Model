@@ -63,7 +63,10 @@ P_I1.WPost = P_I1.WPost * 250; % Projection strength
 % Build the global recurrent inhibition & configure it
 P_I2 = Projection(O,O,'Type','I','Method','function');
 % tw: it's not clear to me why the weighting matrix should be written like
-% this, but we'll have to play it out
+% this, but we'll have to play it out -- looks like the weight of the I2
+% component is computed each round as the fraction of neurons firing times
+% projection strength (i.e. the more neurons fire, the more quenched this
+% situation becomes)
 P_I2.W = @(x) sum(x(:))/prod(O.n); % uniform distribution
 if Adj;AdjustWeight(P_I2);end % Adjust strength at space border; 
 % tw: this is the 1/6 projection strength that is tonic background

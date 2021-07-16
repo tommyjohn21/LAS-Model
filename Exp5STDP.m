@@ -25,6 +25,8 @@ if n_trial == 1 % If it is the first seizure
     [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection( O );
 end
 
+%% tw: Invoke STDP
+
 %% External input
 if n_trial == 1 
     Ic = 200; % tw: stim strength in pA

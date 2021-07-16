@@ -54,6 +54,10 @@ classdef SpikingModel < SpikingNetwork
             for i = 1:numel(O.Proj.In) % So the maximum of O.Input is W0 * f_max
                 % tw: why is Value divided by tau_syn? this is apparently
                 % related to synaptic filtering...
+                
+                % tw: when you are in SpikingModel, and you enter here, you
+                % Input is in units of nS (i.e. total excitatory and
+                % inhibitory conductances)
                 O.Input.(O.Proj.In(i).Type) = O.Input.(O.Proj.In(i).Type) + ...
                                               O.Proj.In(i).Value ./ O.param.tau_syn.(O.Proj.In(i).Type);
             end
@@ -135,7 +139,7 @@ classdef SpikingModel < SpikingNetwork
             
             O.g_K = O.g_K .* exp(-dt ./ O.param.tau_K) + O.param.g_K_max.*O.S.S./O.param.tau_K;    
                
-            if sum(O.S.S)>15
+            if sum(O.S.S)>0
                 keyboard
             end
             
@@ -172,7 +176,9 @@ classdef SpikingModel < SpikingNetwork
             %
             % Save the effective firing rate into its projections 
             if O.param.flag_STP && all(O.param.tau_D(:)) && all(O.param.U(:))
-                % Within the parenthesis now becomes the RATIO compare the strength to a fresh spike                
+                % Within the parenthesis now becomes the RATIO compare the strength to a fresh spike
+                % tw: essentially plasticity changes the "weight" of a
+                % spike; so instead of Boolean, it becomes fractional...
                 [O.Proj.Out.Value] = deal(((O.S.x.*O.S.u)./O.param.U) .* O.S.S); % divided by dt to preserve .Proj.Value 's unit as rate
                 if all(O.param.tau_F(:)) % Short-term facilitation
                     O.S.x = 1 - (1-O.S.x).*exp(-dt./O.param.tau_D) - O.S.u.* O.S.x .* O.S.S; % x:percentage of synaptic vesicle reserve
