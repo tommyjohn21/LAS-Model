@@ -15,7 +15,7 @@ if n_trial == 1 % If it is the first seizure
     % dynamical variables from the same sources; 3. a container named O.S
     % to track spiking; and 4. a container named O.Input to track
     % excitatory/inhibitory input to each neuron
-    O = SpikingModel('Exp5TemplateSTP');
+    O = SpikingModel('Exp5TemplateSTDP');
     
     % Build recurrent connection
     % tw: WPost appears to be conductance of excitatory/inhibitory
@@ -26,6 +26,28 @@ if n_trial == 1 % If it is the first seizure
 end
 
 %% tw: Invoke STDP
+% It is not clear at all whether JY invoked STDP on all connections;
+% however, appears that STDP relies on Projection.Method of multiplication;
+% we can turn the convolution kernels for P_E and P_I1 into method
+% multiplication with the KernelToMultiplication method for Projection
+% class; this will not allow us to use the P_I2 for now, since it is not method
+% multiplication; will address this at some point, but right now, let's
+% just look under the STDP hood
+
+% Per JY's paper, it appears that only recurrent excitation is subject to
+% STDP; we'll try that there for now
+
+if sum([O.Proj.Out.Type]=='E')~=1; error (['The STDP script was only '...
+    'debugged for a single recurrent excitatory proejction']); end
+
+for j = 1:numel(O.Proj.Out) % Each Projection of a NeuralNetwork
+    if strcmp(O.Proj.Out(j).Type,'E')
+        % Turn on STDP
+        O.Proj.Out(j).STDP.Enabled=true;
+        % Change method to multiplication; STDP script requires this
+        KernelToMultiplication(O.Proj.Out(j));
+    end
+end
 
 %% External input
 if n_trial == 1 

@@ -122,7 +122,7 @@ classdef SpikingModel < SpikingNetwork
             % O.Input.I appears to be used wholesale as conductance, which
             % doesn't necessarily make sense? It's true from a unit
             % analysis point of view: Input.I is in nS
-            Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*O.Input.I.*(Veff-E_Cl) + O.param.Cl_in_eq);
+            Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*(O.Input.I./O.param.f_max).*(Veff-E_Cl) + O.param.Cl_in_eq);
             % tw: Cl again decays in linear fasion
             O.Cl_in = Cl_in_inf + (O.Cl_in - Cl_in_inf).*(exp(-dt./O.param.tau_Cl));   
            
@@ -138,11 +138,7 @@ classdef SpikingModel < SpikingNetwork
             % g_K variable actually tracks g_K (in nS) * f_max
             
             O.g_K = O.g_K .* exp(-dt ./ O.param.tau_K) + O.param.g_K_max.*O.S.S./O.param.tau_K;    
-               
-            if sum(O.S.S)>0
-                keyboard
-            end
-            
+                           
             % ######### Generate spikes #########
             % Notice in numeric simulation, dirac function should take a value so that delta * dt = 1
             % tw: first line uses the O.param.f function to determine spike
@@ -159,6 +155,11 @@ classdef SpikingModel < SpikingNetwork
             O.V(Spike) = O.param.V_reset(O.V(Spike)); % Reset membrane potential
             % tw: save who spikes this round
             O.S.S = Spike; % Save it
+            
+            % tw: catch only when spikes are here
+            if sum(O.S.S)>0
+                keyboard
+            end
             
             % ######### Calculate all S-derived variables ######### 
             % The reason why update of S-derived variables needs to happen 

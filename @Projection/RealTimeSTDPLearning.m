@@ -22,13 +22,13 @@ end
 Os = P.Source; % Source network
 Ot = P.Target; % Target network
 
-
 %% Update the filtered S variable for STDP
 % Pre-synaptic part
 if isa(Os,'SpikingNetwork')
     S_pre = double(Os.S.S); % How many spikes are there (consider it as Dirac function)
     P.S.LTP = P.S.LTP.*exp(-dt./P.STDP.tau_LTP) + S_pre./P.STDP.tau_LTP;
 elseif isa(Os,'RateNetwork')
+    keyboard % tw: have not debugged with a rate network 7/16/21
     S_pre = dt.*Os.R.f;
     P.S.LTP = P.S.LTP.*exp(-dt./P.STDP.tau_LTP) + S_pre./P.STDP.tau_LTP;       
 end

@@ -165,6 +165,11 @@ classdef Projection < handle
             N = P.Target.n; % n & m are parameters to crop out the no-existing projections 
             M = size(P.W); 
             m = (M-1)/2;            
+
+            % tw: of note, this script outputs a "sparse double"
+            % representation of the convolution matrix; presumably this is
+            % for the purposes of reducing memory burden
+            
             W = convmtx2(P.W,N); % This is the raw 2D convolution matrix
             if strcmpi(P.Topology,'linear') % Crop the connectivity matrix 
                 selector = false(N(1)+M(1)-1,N(2)+M(2)-1); % This is the size of raw convolution result

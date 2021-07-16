@@ -123,7 +123,6 @@ classdef NeuralNetwork < handle & matlab.mixin.Heterogeneous
             for i = 1:numel(O) % Each NeuralNetwork
                 for j = 1:numel(O.Proj.Out) % Each Projection of a NeuralNetwork
                     if O(i).Proj.Out(j).STDP.Enabled % If the switch is true, then learn.
-                        keyboard % tw: this is for plasticity piece and you want it to catch your eye 7/14/21
                         RealTimeSTDPLearning(O(i).Proj.Out(j),dt);
                     end
                 end
