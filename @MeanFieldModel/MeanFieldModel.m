@@ -58,22 +58,22 @@ classdef MeanFieldModel < RateNetwork
                                                   O.Proj.In(i).Value;
                 else % Apply synaptic filtering
                     O.Input.(O.Proj.In(i).Type) = O.Input.(O.Proj.In(i).Type) + ...
-                                                  O.Proj.In(i).Value ./ O.param.tau_syn.(O.Proj.In(i).Type);
+                                                  O.Proj.In(i).Value ./ O.param.tau_syn.(O.Proj.In(i).Type) .* dt;
                 end
             end
             
             % ----- Update equation 1 (membrane potential) -----
             g_sum = O.param.g_L + ...
-                    O.Input.E ./ O.param.f_max + ...
-                    O.Input.I ./ O.param.f_max + ...
-                    O.g_K ./ O.param.f_max; % from outside
+                    O.Input.E ./ (O.param.f_max.*dt) + ...
+                    O.Input.I ./ (O.param.f_max.*dt) + ...
+                    O.g_K ./ (O.param.f_max.*dt); % from outside
 
             % V_inf - this equation still needs 'I'
             E_Cl = 26.7*log(O.Cl_in./O.param.Cl_ex); % Calculate E_Cl (inhibition effectiveness) 
             V_inf = (O.param.g_L .* O.param.E_L  + ...
-                     O.Input.E ./ O.param.f_max .* O.param.E_Esyn + ...
-                     O.Input.I ./ O.param.f_max .* E_Cl + ...  
-                     O.g_K ./ O.param.f_max .* O.param.E_K + ...
+                     O.Input.E ./ (O.param.f_max.*dt) .* O.param.E_Esyn + ...
+                     O.Input.I ./ (O.param.f_max.*dt) .* E_Cl + ...  
+                     O.g_K ./ (O.param.f_max.*dt) .* O.param.E_K + ...
                      I_ext) ./ g_sum;  
                  
             tau_V_eff = O.param.C./g_sum;
@@ -87,11 +87,11 @@ classdef MeanFieldModel < RateNetwork
             
             % ----- Update equation 3 (chloride dynamics) ------ 
             Faraday = 96500;               
-            Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*(O.Input.I./O.param.f_max).*(O.V-E_Cl) + O.param.Cl_in_eq);
+            Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*(O.Input.I./(O.param.f_max.*dt)).*(O.V-E_Cl) + O.param.Cl_in_eq);
             O.Cl_in = Cl_in_inf + (O.Cl_in - Cl_in_inf).*(exp(-dt./O.param.tau_Cl));   
 
             % ----- Update equation 4 (sAHP dynamics) ----------
-            O.g_K = O.g_K .* exp(-dt ./ O.param.tau_K) + O.param.g_K_max.*O.R.f.*dt./O.param.tau_K;    
+            O.g_K = O.g_K .* exp(-dt ./ O.param.tau_K) + O.param.g_K_max.*O.R.f.*dt./O.param.tau_K.*dt;    
 
             % ######### Generate rate #########
             O.R.f = O.param.f(O.V-O.phi); % Unit: kHz            

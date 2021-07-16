@@ -59,7 +59,7 @@ classdef SpikingModel < SpikingNetwork
                 % Input is in units of nS (i.e. total excitatory and
                 % inhibitory conductances)
                 O.Input.(O.Proj.In(i).Type) = O.Input.(O.Proj.In(i).Type) + ...
-                                              O.Proj.In(i).Value ./ O.param.tau_syn.(O.Proj.In(i).Type);
+                                              O.Proj.In(i).Value ./ O.param.tau_syn.(O.Proj.In(i).Type) .* dt;
             end
             
             % ----- Update equation 1 (membrane potential) -----
@@ -67,16 +67,16 @@ classdef SpikingModel < SpikingNetwork
             % Larry's book, Appendix 5.11
             % tw: not clear why some are divided by f_max and some are not?
             g_sum = O.param.g_L + ...
-                    O.Input.E ./ O.param.f_max + ...
-                    O.Input.I ./ O.param.f_max + ...
-                    O.g_K ./ O.param.f_max; % from outside
+                    O.Input.E ./ (O.param.f_max.*dt) + ...
+                    O.Input.I ./ (O.param.f_max.*dt) + ...
+                    O.g_K ./ (O.param.f_max.*dt); % from outside
 
             % V_inf - this equation still needs 'I'
             E_Cl = 26.7*log(O.Cl_in./O.param.Cl_ex); % Calculate E_Cl (inhibition effectiveness) 
             V_inf = (O.param.g_L .* O.param.E_L  + ...
-                     O.Input.E ./ O.param.f_max .* O.param.E_Esyn + ...
-                     O.Input.I ./ O.param.f_max .* E_Cl + ...  
-                     O.g_K ./ O.param.f_max .* O.param.E_K + ...
+                     O.Input.E ./ (O.param.f_max.*dt) .* O.param.E_Esyn + ...
+                     O.Input.I ./ (O.param.f_max.*dt) .* E_Cl + ...  
+                     O.g_K ./ (O.param.f_max.*dt) .* O.param.E_K + ...
                      I_ext) ./ g_sum;  
             
             % tw: this is the effective time constant for a *tiny* slice of
@@ -122,7 +122,7 @@ classdef SpikingModel < SpikingNetwork
             % O.Input.I appears to be used wholesale as conductance, which
             % doesn't necessarily make sense? It's true from a unit
             % analysis point of view: Input.I is in nS
-            Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*(O.Input.I./O.param.f_max).*(Veff-E_Cl) + O.param.Cl_in_eq);
+            Cl_in_inf = (O.param.tau_Cl./O.param.Vd_Cl./Faraday.*(O.Input.I./(O.param.f_max.*dt)).*(Veff-E_Cl) + O.param.Cl_in_eq);
             % tw: Cl again decays in linear fasion
             O.Cl_in = Cl_in_inf + (O.Cl_in - Cl_in_inf).*(exp(-dt./O.param.tau_Cl));   
            
@@ -137,7 +137,7 @@ classdef SpikingModel < SpikingNetwork
             % tw: be aware that the unit here is not nS! 
             % g_K variable actually tracks g_K (in nS) * f_max
             
-            O.g_K = O.g_K .* exp(-dt ./ O.param.tau_K) + O.param.g_K_max.*O.S.S./O.param.tau_K;    
+            O.g_K = O.g_K .* exp(-dt ./ O.param.tau_K) + O.param.g_K_max.*O.S.S./O.param.tau_K.*dt;    
                            
             % ######### Generate spikes #########
             % Notice in numeric simulation, dirac function should take a value so that delta * dt = 1
