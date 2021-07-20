@@ -67,7 +67,9 @@ tau_phi = gen_param(100,0,n,1); % ms
 % 1) So assume diameter = 15 micro, 40% available space of cytosol, then 50% free water, then
 % 2) Use John Rinzel's parameter, diameter = 10 micro, round
 % 3) border 20 micro, isotetrahedrum
-Vd_Cl = 0.25 .* sqrt(2) / 12 * 20^3 /1000 .* ones(n); % Unit: pL (10^-12L, which is 10^-15m^3, which is 10^3 microm^3, so if you use micro, remember to /1000)
+% 4) divide by f_max value (without units) to maintain dynamics with
+% updated calculation of Cl_in_inf
+Vd_Cl = 0.25 .* sqrt(2) / 12 * 20^3 /1000 .* ones(n) ./ f_max; % Unit: pL (10^-12L, which is 10^-15m^3, which is 10^3 microm^3, so if you use micro, remember to /1000)
                                                   % Reference: Thus, the amount of restricted water is thought to be of the order of 50% of all water in the cytoplasm (Luby-Phelps, 2000; Fullerton & Cameron, 2007).
 Cl_ex = 110; % Reference: J Neurophysiol. 1988b;60:195–124. (Berglund et al. 2006; Glykys et al. 2014). 6~14
 Cl_in_eq = gen_param(6,0,n,1); % The equilibruim intracellular chloride concentration, 
