@@ -77,10 +77,12 @@ for i = 1:n
         
         % Detect seizures
         if mod(O.t,1000)==0 && O.t>(stim_t(end)*1000) % no need to look until end of stim
-            [seizure,dP,fdP] = detector(O,dt);
-            if seizure, break, end
-            disp(['t = ' num2str(O.t/1000) 's; no seizure'])
+%             [seizure,dP,fdP] = detector(O,dt);
+%             if seizure, break, end
+%             disp(['t = ' num2str(O.t/1000) 's; no seizure'])
+            disp(['t = ' num2str(O.t/1000) 's'])
         elseif O.t>t*1000
+            % determin if seizure
             [seizure,dP,fdP] = detector(O,dt);
             break
         end
@@ -98,6 +100,7 @@ for i = 1:n
     output(i).dP = dP;
     output(i).fdP = fdP;
     output(i).seizure = seizure;
+    output.O = O;
     
     %% Clear workspace
     clearvars('-except','output','n','stim_dur','t')
