@@ -131,7 +131,7 @@ while 1
     end
     
     if mod(O.t,5000)==0
-       display(['Simulation ' num2str(i) ': ' num2str(round(O.t/1000)) 's'])
+       disp(['Simulation ' num2str(i) ': ' num2str(round(O.t/1000)) 's'])
     end
 
 end

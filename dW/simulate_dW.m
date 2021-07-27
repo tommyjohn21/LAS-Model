@@ -2,12 +2,15 @@
 
 fname = '~/dW/dW_sim_';
 
-for i = 1:100
-   
+parfor i = 1:100
+
+    % Annouce entry
+    disp(['Beginning simulation ' num2str(i) '...'])   
+
     % Generate and retrieve weight matrices
     o = Exp5STDP(i);
     
     % Save output in parallel fashion
-    parsave([fname num2str(i) '.mat'])
+    parsave([fname num2str(i) '.mat'],o)
     
 end
