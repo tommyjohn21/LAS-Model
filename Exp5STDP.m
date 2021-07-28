@@ -139,7 +139,7 @@ end
 %% Format output
 if i ==1
    % save a single weight matrix, as should be the same for all
-   o.W=W; 
+   o.W=P_E.W; 
 end
 
 o.dW = P_E.STDP.W;

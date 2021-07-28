@@ -2,7 +2,7 @@
 
 fname = '~/dW/dW_sim_';
 
-parfor i = 1:100
+for i = 1:100
 
     % Annouce entry
     disp(['Beginning simulation ' num2str(i) '...'])   
