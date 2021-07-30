@@ -3,10 +3,10 @@
 stim_durations = fliplr(0:0.01:3); % start with stronger stims for fast detection
 n_sims = 100;
 sim=randi(100,1,5); % Choose 5 of your STDP matrices to find the threshold
-vardir='~/Desktop/dW';
-savedir='~/Desktop/detector';
+vardir='~/dW';
+savedir='~/detector_stdp';
 
-for s = 1:numel(sim) % Cycle through STDP matrices
+parfor s = 1:numel(sim) % Cycle through STDP matrices
     for i = 1:numel(stim_durations)
         
         d = detector_Exp1_STDP(n_sims,stim_durations(i),50,vardir,sim(s));
