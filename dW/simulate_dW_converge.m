@@ -5,7 +5,7 @@ vardir = '~/dW';
 sim = 5;
 nseizures = 20;
 
-parfor s = 1:sim
+for s = 1:sim
     for i = 1:nseizures
         
         % Annouce entry
