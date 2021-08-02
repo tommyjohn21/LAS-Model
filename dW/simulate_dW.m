@@ -69,20 +69,25 @@ saveas(f,['~/Desktop/' figname '.svg'])
 close(f)
 
 f = figure();
-imagesc(1:2000,1:2000,dW.*W - W);
+dW = dW-1;
+dWmax = max(abs(dW(:)));
+eta_adjustment_factor = 0.2 / dWmax; % Let's force it approximately 20% by the first learning
+eta_adjustment_factor = round(eta_adjustment_factor*100)/100;
+dW = dW * eta_adjustment_factor;
+imagesc(1:2000,1:2000,dW*eta_adjustment_factor);
 a = gca;
 a.XLabel.String = 'Neuron index';
 a.YLabel.String = 'Neuron index';
-a.Title.String = 'eLife figure (W-dW.*W)';
+a.Title.String = 'eLife figure (dW-1), adjusted by eta';
 % a.Title.String = 'Model seizure t_{stim}=3s';
 c = colorbar;
-% c.Limits = clim;
+colormap(jet(360));
+c.Limits = [-0.05 0.05];
 c.Label.String = 'Arbitrary units';
 a.FontSize = 18;
 figname = 'elifefig';
 saveas(f,['~/Desktop/' figname '.svg'])
 close(f)
-
 
 %% Generate additional dW matrices
 f = dir('~/Desktop/dW/');
@@ -218,5 +223,26 @@ c = colorbar;
 c.Label.String = 'Arbitrary units';
 a.FontSize = 18;
 figname = ['dW_ave'];
+saveas(f,['~/Desktop/' figname '.svg'])
+close(f)
+
+f = figure();
+dW = m-1;
+dWmax = max(abs(dW(:)));
+eta_adjustment_factor = 0.2 / dWmax; % Let's force it approximately 20% by the first learning
+eta_adjustment_factor = round(eta_adjustment_factor*100)/100;
+dW = dW * eta_adjustment_factor;
+imagesc(1:2000,1:2000,dW*eta_adjustment_factor);
+a = gca;
+a.XLabel.String = 'Neuron index';
+a.YLabel.String = 'Neuron index';
+a.Title.String = 'eLife figure (dW_{ave}-1), adjusted by eta';
+% a.Title.String = 'Model seizure t_{stim}=3s';
+c = colorbar;
+colormap(jet(360));
+caxis([-0.15 0.15]);
+c.Label.String = 'Arbitrary units';
+a.FontSize = 18;
+figname = 'elifefig_mean';
 saveas(f,['~/Desktop/' figname '.svg'])
 close(f)
