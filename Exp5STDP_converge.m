@@ -54,7 +54,7 @@ end
 % Update weight kernel with dW
 if i>1
     load([savedir '/dW_' num2str(s) '_converge_sim_' num2str(i-1) '.mat']);
-    P_E.W = P_E.W.*o.dW;
+    P_E.W = o.W.*o.dW;
 end
 
 %% External input

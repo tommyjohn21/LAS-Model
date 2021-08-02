@@ -6,7 +6,7 @@ sim = 5;
 nseizures = 20;
 
 parfor s = 1:sim
-    for i = 2:nseizures
+    for i = 1:nseizures
         
         % Annouce entry
         disp(['Beginning seizure ' num2str(i) ' for dW ' num2str(s) '...'])
