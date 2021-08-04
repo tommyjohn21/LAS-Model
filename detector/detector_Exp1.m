@@ -18,9 +18,9 @@ for i = 1:n
     %% Lay out the model and build recurrent connection
     if n_trial == 1 % If it is the first seizure
         % Lay out the field
-        O = SpikingModel('detector_Exp1Template');
+        O = SpikingModel('Exp5Template_edge');
         % Build recurrent connection
-        [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection( O );
+        [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_edge( O );
     end
     
     %% External input
@@ -45,7 +45,7 @@ for i = 1:n
     %% Simulation settings
     dt = 1; % ms
     if n_trial == 1
-        R = CreateRecorder(O,50000); % The 2nd argument is Recorder.Capacity
+        R = CreateRecorder(O,75000); % The 2nd argument is Recorder.Capacity
         T_end = R.Capacity - 1; % simulation end time.
         AddVar(R,'EPSC');
         AddVar(R,'IPSC'); % To simulate LFP, you need to record PSCs.
@@ -76,9 +76,9 @@ for i = 1:n
         Update(O,dt);
         
         % Detect seizures
-        if mod(O.t,1000)==0 && O.t>(stim_t(end)*1000) % no need to look until end of stim
-%             [seizure,dP,fdP] = detector(O,dt);
-%             if seizure, break, end
+        if mod(O.t,3000)==0 && O.t>(stim_t(end)*1000) % no need to look until end of stim
+            [seizure,dP,fdP] = detector(O,dt);
+            if seizure, break, end
 %             disp(['t = ' num2str(O.t/1000) 's; no seizure'])
             disp(['t = ' num2str(O.t/1000) 's'])
         elseif O.t>t*1000
@@ -100,7 +100,7 @@ for i = 1:n
     output(i).dP = dP;
     output(i).fdP = fdP;
     output(i).seizure = seizure;
-    output.O = O;
+%     output.O = O;
     
     %% Clear workspace
     clearvars('-except','output','n','stim_dur','t')
