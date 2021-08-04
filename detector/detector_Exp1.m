@@ -96,7 +96,7 @@ for i = 1:n
     end
     
         %% Format output
-%     output(i).V = O.Recorder.Var.V(:,1:O.t);
+    output(i).V = O.Recorder.Var.V(:,1:O.t);
     output(i).dP = dP;
     output(i).fdP = fdP;
     output(i).seizure = seizure;
