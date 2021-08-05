@@ -17,14 +17,14 @@ if n_trial == 1 % If it is the first seizure
     % dynamical variables from the same sources; 3. a container named O.S
     % to track spiking; and 4. a container named O.Input to track
     % excitatory/inhibitory input to each neuron
-    O = SpikingModel('Exp5TemplateSTDP');
+    O = SpikingModel('Exp5Template_edge');
     
     % Build recurrent connection
     % tw: WPost appears to be conductance of excitatory/inhibitory
     % channels, respectively (P_I1.WPost + P_I2.WPost = g_I); W appears to
     % be related to the actual distribution (can hold explicit
     % convolutional values or an actual function)
-    [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection( O );
+    [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_edge( O );
 end
 
 %% tw: Invoke STDP
@@ -56,8 +56,7 @@ if n_trial == 1
     Ic = 200; % tw: stim strength in pA
     stim_x = [0.475 0.525]; % tw: where on the line you are stimulating
     % tw: length of time to stimulate
-    % stim_t = [2 5]; % Unit: second
-    stim_t = [2 3.5]; % Unit: second; chose stimulus duration of 1.5 s as you know p(seizure|stim_dur=1.5s)=1
+    stim_t = [2 5]; % Unit: second; chose stimulus duration of 3 s as you know p(seizure|stim_dur=3s)=1
     O.Ext = ExternalInput;
     O.Ext.Target = O;
     % tw: this is clearly a way to create an anonymous function to
@@ -80,7 +79,7 @@ end
 dt = 1; % ms
 if n_trial == 1
     % tw: recorder capacity is by def the end of the simulation
-    R = CreateRecorder(O,50000); % The 2nd argument is Recorder.Capacity 
+    R = CreateRecorder(O,75000); % The 2nd argument is Recorder.Capacity 
     T_end = R.Capacity - 1; % simulation end time.  
     AddVar(R,'EPSC');
     AddVar(R,'IPSC'); % To simulate LFP, you need to record PSCs.
@@ -130,7 +129,7 @@ while 1
         f=plot(O);drawnow
     end
     
-    if mod(O.t,5000)==0
+    if mod(O.t,1000)==0
        disp(['Simulation ' num2str(i) ': ' num2str(round(O.t/1000)) 's'])
     end
 
@@ -139,7 +138,8 @@ end
 %% Format output
 if i ==1
    % save a single weight matrix, as should be the same for all
-   o.W=P_E.W; 
+   o.W=P_E.W;
+   o.V=O.Recorder.Var.V(:,1:O.t);
 end
 
 o.dW = P_E.STDP.W;

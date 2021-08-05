@@ -1,7 +1,8 @@
 %% Use Exp5STDP.m script to generate 100 simulations of weight matrix
 
-if 0 % turn off
-    fname = '~/dW/dW_sim_';
+if 1 % turn off
+    fname = '~/dW_edge/dW_sim_edge_';
+%     fname = '~/Desktop/dW_edge/dW_sim_';
     
     parfor i = 1:100
         
@@ -17,14 +18,16 @@ if 0 % turn off
     end
 end
 
+return
+
 %% Generate images from a select few matrices
-f = dir('~/Desktop/dW/');
+f = dir('~/Desktop/dW_edge/');
 load([f(3).folder '/' f(3).name]);
 W = o.W;
 dW = o.dW;
 
 f = figure();
-imagesc(1:2000,1:2000,W);
+imagesc(1:2400,1:2400,W);
 a = gca;
 a.XLabel.String = 'Neuron index';
 a.YLabel.String = 'Neuron index';
@@ -39,7 +42,7 @@ saveas(f,['~/Desktop/' figname '.svg'])
 close(f)
 
 f = figure();
-imagesc(1:2000,1:2000,dW);
+imagesc(1:2400,1:2400,dW);
 a = gca;
 a.XLabel.String = 'Neuron index';
 a.YLabel.String = 'Neuron index';
@@ -54,7 +57,7 @@ saveas(f,['~/Desktop/' figname '.svg'])
 close(f)
 
 f = figure();
-imagesc(1:2000,1:2000,dW.*W);
+imagesc(1:2400,1:2400,dW.*W);
 a = gca;
 a.XLabel.String = 'Neuron index';
 a.YLabel.String = 'Neuron index';
@@ -74,20 +77,54 @@ dWmax = max(abs(dW(:)));
 eta_adjustment_factor = 0.2 / dWmax; % Let's force it approximately 20% by the first learning
 eta_adjustment_factor = round(eta_adjustment_factor*100)/100;
 dW = dW * eta_adjustment_factor;
-imagesc(1:2000,1:2000,dW*eta_adjustment_factor);
+imagesc(1:2400,1:2400,dW*eta_adjustment_factor);
 a = gca;
 a.XLabel.String = 'Neuron index';
 a.YLabel.String = 'Neuron index';
 a.Title.String = 'eLife figure (dW-1), adjusted by eta';
 % a.Title.String = 'Model seizure t_{stim}=3s';
 c = colorbar;
-colormap(jet(360));
-c.Limits = [-0.05 0.05];
+% colormap(jet(360));
+% c.Limits = [-0.05 0.05];
 c.Label.String = 'Arbitrary units';
 a.FontSize = 18;
 figname = 'elifefig';
 saveas(f,['~/Desktop/' figname '.svg'])
 close(f)
+
+f = figure();
+dW = o.dW;
+imagesc(1:2400,1:2400,W.*(dW-1));
+a = gca;
+a.XLabel.String = 'Neuron index';
+a.YLabel.String = 'Neuron index';
+a.Title.String = 'W.*(dW-1) - Change from naive W';
+% a.Title.String = 'Model seizure t_{stim}=3s';
+c = colorbar;
+% colormap(jet(360));
+% c.Limits = [-0.05 0.05];
+c.Label.String = 'Arbitrary units';
+a.FontSize = 18;
+figname = 'changefromnaive';
+saveas(f,['~/Desktop/' figname '.svg'])
+close(f)
+
+%% Plot representative seizure
+V = o.V;
+f = figure;
+imagesc(0:0.001:size(V,2)./1000,1:2400,V)
+a = gca;
+a.XLabel.String = 'Time (s)';
+a.YLabel.String = 'Neuron index';
+a.Title.String = 'Model seizure (t_{stim}=3s)';
+% a.Title.String = 'Model seizure t_{stim}=3s';
+c = colorbar;
+c.Label.String = 'Voltage (mV)';
+a.FontSize = 18;
+figname = 'modelseizure';
+saveas(f,['~/Desktop/' figname '.svg'])
+close(f)
+
 
 %% Generate additional dW matrices
 f = dir('~/Desktop/dW/');
