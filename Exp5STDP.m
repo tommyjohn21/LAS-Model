@@ -55,6 +55,7 @@ end
 if n_trial == 1 
     Ic = 200; % tw: stim strength in pA
     stim_x = [0.475 0.525]; % tw: where on the line you are stimulating
+%     stim_x = [0 0.05]; % tw: where on the line you are stimulating
     % tw: length of time to stimulate
     stim_t = [2 5]; % Unit: second; chose stimulus duration of 3 s as you know p(seizure|stim_dur=3s)=1
     O.Ext = ExternalInput;
@@ -136,7 +137,7 @@ while 1
 end
 
 %% Format output
-if i ==1
+if i ==1 || i >= 1000
    % save a single weight matrix, as should be the same for all
    o.W=P_E.W;
    o.V=O.Recorder.Var.V(:,1:O.t);

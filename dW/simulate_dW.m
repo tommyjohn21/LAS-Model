@@ -1,17 +1,23 @@
 %% Use Exp5STDP.m script to generate 100 simulations of weight matrix
 
+s = rng('default');
+
 if 1 % turn off
-    fname = '~/dW_edge/dW_sim_edge_';
-%     fname = '~/Desktop/dW_edge/dW_sim_';
+%     fname = '~/dW_edge/dW_sim_edge_';
+    fname = '~/Desktop/dW_edge/dW_sim_rng_';
     
-    parfor i = 1:100
+    for i = 2003:2004
         
         % Annouce entry
         disp(['Beginning simulation ' num2str(i) '...'])
         
+        
+        % Set random number generator
+        rng(s);
+        
         % Generate and retrieve weight matrices
         o = Exp5STDP(i);
-        
+         
         % Save output in parallel fashion
         parsave([fname num2str(i) '.mat'],o)
         
@@ -49,7 +55,8 @@ a.YLabel.String = 'Neuron index';
 a.Title.String = 'Weighting adjustment matrix (dW)';
 % a.Title.String = 'Model seizure t_{stim}=3s';
 c = colorbar;
-dWclim = c.Limits;
+dWclim = [0.8 1.2];
+caxis(dWclim)
 c.Label.String = 'Arbitrary units';
 a.FontSize = 18;
 figname = 'dWmatrix';
@@ -127,29 +134,26 @@ close(f)
 
 
 %% Generate additional dW matrices
-f = dir('~/Desktop/dW/');
+f = dir('~/Desktop/dW_edge/');
 % i = randi(100)+4;
 i = 59;
 load([f(i).folder '/' f(i).name]);
 dW = o.dW;
 
 f = figure();
-imagesc(1:2000,1:2000,dW);
+imagesc(1:2400,1:2400,dW);
 a = gca;
 a.XLabel.String = 'Neuron index';
 a.YLabel.String = 'Neuron index';
 a.Title.String = 'Weighting adjustment matrix (dW)';
 % a.Title.String = 'Model seizure t_{stim}=3s';
 c = colorbar;
-c.Limits = dWclim;
+caxis(dWclim);
 c.Label.String = 'Arbitrary units';
 a.FontSize = 18;
 figname = ['dW' num2str(i)];
 saveas(f,['~/Desktop/' figname '.svg'])
 close(f)
-
-% Residual from matrix
-figure, imagesc(dW-dW1)
 
 %% Fit using wavelet function
 if 0
@@ -196,12 +200,12 @@ saveas(f,['~/Desktop/' figname '.svg'])
 i = [3,98,68,21,30];
 
 for ii = i
-    f = dir('~/Desktop/dW/');
+    f = dir('~/Desktop/dW_edge/');
     load([f(ii).folder '/' f(ii).name]);
     dW = o.dW;
     
     f = figure();
-    imagesc(1:2000,1:2000,dW);
+    imagesc(1:2400,1:2400,dW);
     a = gca;
     a.XLabel.String = 'Neuron index';
     a.YLabel.String = 'Neuron index';
@@ -218,9 +222,9 @@ end
 
 %% Generate average dW
 % Results of the above are stored on the Desktop in dir called dW
-if 0
-s = zeros(2000,2000);
-f = dir('~/Desktop/dW/');
+if 1
+s = zeros(2400,2400);
+f = dir('~/Desktop/dW_edge/');
 for i = 1:numel(f) % cycle through dW matrices
     % skip text files, etc.
     if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.txt')), continue, end
@@ -233,7 +237,7 @@ m=s./100;
 end
 
 f = figure();
-imagesc(1:2000,1:2000,m);
+imagesc(1:2400,1:2400,m);
 a = gca;
 a.XLabel.String = 'Neuron index';
 a.YLabel.String = 'Neuron index';
@@ -249,7 +253,7 @@ close(f)
     
 
 f = figure();
-imagesc(1:2000,1:2000,m);
+imagesc(1:2400,1:2400,m);
 a = gca;
 a.XLabel.String = 'Neuron index';
 a.YLabel.String = 'Neuron index';
@@ -263,23 +267,127 @@ figname = ['dW_ave'];
 saveas(f,['~/Desktop/' figname '.svg'])
 close(f)
 
-f = figure();
-dW = m-1;
-dWmax = max(abs(dW(:)));
-eta_adjustment_factor = 0.2 / dWmax; % Let's force it approximately 20% by the first learning
-eta_adjustment_factor = round(eta_adjustment_factor*100)/100;
-dW = dW * eta_adjustment_factor;
-imagesc(1:2000,1:2000,dW*eta_adjustment_factor);
-a = gca;
-a.XLabel.String = 'Neuron index';
-a.YLabel.String = 'Neuron index';
-a.Title.String = 'eLife figure (dW_{ave}-1), adjusted by eta';
-% a.Title.String = 'Model seizure t_{stim}=3s';
-c = colorbar;
-colormap(jet(360));
-caxis([-0.15 0.15]);
-c.Label.String = 'Arbitrary units';
-a.FontSize = 18;
-figname = 'elifefig_mean';
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% f = figure();
+% dW = m-1;
+% dWmax = max(abs(dW(:)));
+% eta_adjustment_factor = 0.2 / dWmax; % Let's force it approximately 20% by the first learning
+% eta_adjustment_factor = round(eta_adjustment_factor*100)/100;
+% dW = dW * eta_adjustment_factor;
+% imagesc(1:2000,1:2000,dW*eta_adjustment_factor);
+% a = gca;
+% a.XLabel.String = 'Neuron index';
+% a.YLabel.String = 'Neuron index';
+% a.Title.String = 'eLife figure (dW_{ave}-1), adjusted by eta';
+% % a.Title.String = 'Model seizure t_{stim}=3s';
+% c = colorbar;
+% colormap(jet(360));
+% caxis([-0.15 0.15]);
+% c.Label.String = 'Arbitrary units';
+% a.FontSize = 18;
+% figname = 'elifefig_mean';
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
+
+%% dW structure exploration
+dWclim = [0.8 1.2];
+fd = dir('~/Desktop/dW_edge_1000/');
+
+for i = 1:numel(fd)
+    
+    if strcmp(fd(i).name,'.') || strcmp(fd(i).name,'..') || strcmp(fd(i).name,'.DS_Store')
+        continue
+    end
+    
+    load([fd(i).folder '/' fd(i).name]);
+    dW = o.dW;
+    V = o.V;
+    
+    f = figure;
+    imagesc(0:0.001:size(V,2)./1000,1:2400,V)
+    a = gca;
+    a.XLabel.String = 'Time (s)';
+    a.YLabel.String = 'Neuron index';
+    a.Title.String = 'Model seizure (t_{stim}=3s)';
+    % a.Title.String = 'Model seizure t_{stim}=3s';
+    c = colorbar;
+    c.Label.String = 'Voltage (mV)';
+    a.FontSize = 18;
+    figname = 'modelseizure';
+    saveas(f,['~/Desktop/' figname num2str(i) '.svg'])
+%     close(f)
+
+    
+    f = figure();
+    imagesc(1:2400,1:2400,dW);
+    a = gca;
+    a.XLabel.String = 'Neuron index';
+    a.YLabel.String = 'Neuron index';
+    a.Title.String = 'Weighting adjustment matrix (dW)';
+    % a.Title.String = 'Model seizure t_{stim}=3s';
+    c = colorbar;
+    caxis(dWclim);
+    c.Label.String = 'Arbitrary units';
+    a.FontSize = 18;
+    figname = ['dW' num2str(i)];
+    saveas(f,['~/Desktop/' figname '.svg'])
+%     close(f)
+end
+
+%% Zoom in on structure
+fd = dir('~/Desktop/dW_edge_1000/');
+
+for i = 10
+    
+    if strcmp(fd(i).name,'.') || strcmp(fd(i).name,'..') || strcmp(fd(i).name,'.DS_Store')
+        continue
+    end
+    
+    load([fd(i).folder '/' fd(i).name]);
+    dW = o.dW;
+    V = o.V;
+    
+    f = figure;
+    imagesc(0:0.001:size(V,2)./1000,1:2400,V)
+    a = gca;
+    a.XLabel.String = 'Time (s)';
+    a.YLabel.String = 'Neuron index';
+    a.Title.String = 'Model seizure (t_{stim}=3s)';
+    % a.Title.String = 'Model seizure t_{stim}=3s';
+    a.XLim = [40 41];
+    a.YLim = [1 900];
+    c = colorbar;
+    c.Label.String = 'Voltage (mV)';
+    a.FontSize = 18;
+    figname = 'modelseizurezoom';
+    saveas(f,['~/Desktop/' figname num2str(i) '.svg'])
+%     close(f)
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
