@@ -26,7 +26,8 @@ for i = 1:n
     %% External input
     if n_trial == 1
         Ic = 200;
-        stim_x = [0.475 0.525];
+        % stim_x = [0.475 0.525];
+        stim_x = [0 0.05]; % Restrict domain of activation
         stim_t = [2 2+stim_dur]; % Unit: second
         O.Ext = ExternalInput;
         O.Ext.Target = O;
@@ -96,7 +97,7 @@ for i = 1:n
     end
     
         %% Format output
-    output(i).V = O.Recorder.Var.V(:,1:O.t);
+%     output(i).V = O.Recorder.Var.V(:,1:O.t);
     output(i).dP = dP;
     output(i).fdP = fdP;
     output(i).seizure = seizure;

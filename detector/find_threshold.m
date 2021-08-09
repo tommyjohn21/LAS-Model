@@ -1,14 +1,16 @@
 %%% Find threshold of original model by brute force %%%
-savedir = '~/Desktop/detector/';
+savedir = '~/detector_wavefront/';
 stim_durations = fliplr(0:0.01:3); % start with stronger stims for fast detection
-n_sims = 40;
+n_sims = 100;
 
-for i = 1:numel(stim_durations)
+parfor i = 1:numel(stim_durations)
    
     d = detector_Exp1(n_sims,stim_durations(i),50);
     parsave([savedir 'stim_dur_' num2str(stim_durations(i)) '.mat'],d)
     
 end
+
+return
 
 %% Load data
 % data is detector_100 and detector_40 files stored on saturn in the
