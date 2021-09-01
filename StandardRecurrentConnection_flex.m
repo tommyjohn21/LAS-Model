@@ -1,4 +1,4 @@
-function [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_edge( O, varargin )
+function [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_flex( O, varargin )
 % [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection( O, varargin )
 %
 % This is for building standard recurrent connection.  
@@ -25,32 +25,41 @@ addParameter(p,'Adjust',false);
 parse(p,varargin{:});
 Adj = p.Results.Adjust;
 
+% Scale parameter for width of Gaussians
+scale = 1;
+adjust = 1.35;
+synaptic_inhibition = adjust*250;
+global_inhibition = 0.0175;
+hat_scale = 1.23;
+
 % Build recurrent excitation & configure it
 P_E = Projection(O,O,'Type','E','Topology','linear');
 % Change sigma calculation here as was going to be 2% regardless of line
 % size
-Sigma_E = diag(O.n) * 0.02 .* diag([2000 1]./O.n); % percentage of the field 
+% Sigma_E = scale.*diag(O.n) * 0.02 .* diag([2000./2400 1]); % percentage of the field 
+Sigma_E = diag(O.n) * 0.02 * hat_scale; % percentage of the field 
 Kernelize(P_E, @(x) mvnpdf(x,[0 0],Sigma_E.^2), 'KerSize', ceil(2.5*diag(Sigma_E)));
 if Adj;AdjustWeight(P_E);end % Adjust strength at space border; 
-P_E.WPost = P_E.WPost * 100; % Projection strength 
+P_E.WPost = P_E.WPost * adjust * 100; % Projection strength 
 
 % Build recurrent inhibition & configure it
 P_I1 = Projection(O,O,'Type','I','Topology','linear');
 % Change sigma calculation here as was going to be 2% regardless of line
 % size
-Sigma_I = diag(O.n) * 0.03 .* diag([2000 1]./O.n); % percentage of the field  
+% Sigma_I = scale.*diag(O.n) * 0.03 .* diag([2000./2400 1]); % percentage of the field  
+Sigma_I = diag(O.n) * 0.03 * hat_scale; % percentage of the field  
 Kernelize(P_I1, @(x) mvnpdf(x,[0 0],Sigma_I.^2), 'KerSize', ceil(2.5*diag(Sigma_I)));
 if Adj;AdjustWeight(P_I1);end % Adjust strength at space border; 
-P_I1.WPost = P_I1.WPost * 250; % Projection strength
+P_I1.WPost = P_I1.WPost * synaptic_inhibition; % Projection strength
 
 % Build the global recurrent inhibition & configure it
-P_I2 = Projection(O,O,'Type','I','Method','function');
+P_I2 = Projection(O,O,'Type','I_global','Method','function');
 % Scale uniform distribution to keep same parameters (although area under
 % curve will no longer be 1... (maybe scale WPost instead??)
-P_I2.W = @(x) sum(x(:))/(prod(O.n).*prod([2000 1]./O.n)); % uniform distribution
-% P_I2.W = @(x) sum(x(:))/prod(O.n); % uniform distribution
+% P_I2.W = @(x) scale.*sum(x(:))/(prod(O.n).*prod([2000./2400 1])); % uniform distribution
+P_I2.W = @(x) scale.*sum(x(:))/prod(O.n); % uniform distribution
 if Adj;AdjustWeight(P_I2);end % Adjust strength at space border; 
-P_I2.WPost = P_I2.WPost * 50; % Projection strength
+P_I2.WPost = P_I2.WPost * global_inhibition; % Projection strength
 
 end
 

@@ -5,19 +5,28 @@ if ~exist('n_trial','var')
     n_trial = 1;
 end
 
+%% Set random number generator
+% rng default
+
 %% Lay out the model and build recurrent connection
 if n_trial == 1 % If it is the first seizure
     % Lay out the field
-    O = SpikingModel('Exp5Template_edge');
+    O = SpikingModel_flex('Exp5Template_flex');
     % Build recurrent connection
-    [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_edge( O );
+    [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_flex( O );
 end
 
 %% External input
 if n_trial == 1 
     Ic = 200;
     stim_x = [0.475 0.525];
+%     stim_x = [0 0.05];
 %     stim_x = [0.1 0.15]; % normalized spatial unit
+    
+    % If initial model was 2000 units, 5% is 100 neurons; let us stimulate
+    % the same number of neurons here
+%     stim_x = [0 0.05].*O.param.grain;
+    
     stim_t = [2 5]; % Unit: second
     O.Ext = ExternalInput;
     O.Ext.Target = O;       
@@ -36,10 +45,13 @@ end
 %% Simulation settings 
 dt = 1; % ms
 if n_trial == 1
-    R = CreateRecorder(O,75000); % The 2nd argument is Recorder.Capacity 
+    R = CreateRecorder(O,20000); % The 2nd argument is Recorder.Capacity 
     T_end = R.Capacity - 1; % simulation end time.  
     AddVar(R,'EPSC');
     AddVar(R,'IPSC'); % To simulate LFP, you need to record PSCs.
+%     AddVar(R,'global_inhibition')
+%     AddVar(R,'inhibitory_current')
+%     AddVar(R,'excitatory_current')
 end
 
 %% Realtime plot setting
@@ -65,6 +77,10 @@ while 1
     
     WriteToRecorder(O); 
     Update(O,dt);
+    
+    if mod(O.t,10000)==0
+%         keyboard
+    end
     
     % Real time plotting
     % use mod < dt instead of == 0 can deal with floating number errors

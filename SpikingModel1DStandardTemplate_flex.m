@@ -5,7 +5,11 @@
 % Version: 2017/04/05, Jyun-you Liou
 
 %% Network size
-n = [2400,1]; % Number of neurons 
+% Define factor for coarse-graining
+grain = 4;
+
+% Divide divide grain
+n = [2000./grain,1]; % Number of neurons 
 
 %% Set parameters for each of the equations
 % gen_param is a parameter generation function gen_param(mu,sigma,n,flag)
