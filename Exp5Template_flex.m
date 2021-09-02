@@ -36,18 +36,24 @@ f = @(u) f0+fs.*exp(u./beta); % unit: kHz
 %   Decreasing g_K_max increases excitability
 %   Increasing g_K_max decreases excitability
 
-g_K_max = gen_param(130,0,n,1); 
+dyn_scale = 1.02;
+dyn_scale_Cl = 0.96 * dyn_scale; %0.95
+dyn_scale_gK = 1 * dyn_scale;
+amp = 1.05;
+
+g_K_max = gen_param(47/dyn_scale_gK*amp,0,n,1);  % 39.5
 % g_K_max = gen_param(50,0,n,1); % Fig 5
 % g_K_max = gen_param(40,0,n,1); % Sup 2A
 
 % Decreasing tau_Cl allows for improved Cl gradient, and improved
 % inhibition; larger values mean unable to inhibit activity
-tau_K = gen_param(2375,0,[n,1],1); % Can also be function
+tau_K = gen_param(3150/dyn_scale_gK,0,[n,1],1); % Can also be function
 % E_K = gen_param(-90,0,n,0);
 
 tau_syn.I_global = gen_param(15,0,n,0); % Inhibitory synaptic time constant for global inhibition
 % tau_syn.I_global = gen_param(15,0,n,0); % Inhibitory synaptic time constant for global inhibition
-Vd_Cl = gen_param(0.51,0,n,0);
-% Cl_in_eq = gen_param(5,0,n,1); % The equilibruim intracellular chloride concentration, 
-tau_Cl = gen_param(2850,0,n,1); % Chloride clearance time constant
+Vd_Cl = gen_param(0.955./dyn_scale_Cl/amp,0,n,0);
+% Vd_Cl = Vd_Cl./dyn_scale;
+% Cl_in_eq = gen_param(5.5,0,n,1); % The equilibruim intracellular chloride concentration, 
+tau_Cl = gen_param(1850/dyn_scale_Cl,0,n,1); % Chloride clearance time constant
 % Cl_in = Cl_in_eq;

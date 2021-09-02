@@ -6,7 +6,7 @@
 
 %% Network size
 % Define factor for coarse-graining
-grain = 4;
+grain = 10;
 
 % Divide divide grain
 n = [2000./grain,1]; % Number of neurons 

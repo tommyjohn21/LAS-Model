@@ -19,6 +19,7 @@ end
 %% External input
 if n_trial == 1 
     Ic = 200;
+
     stim_x = [0.475 0.525];
 %     stim_x = [0 0.05];
 %     stim_x = [0.1 0.15]; % normalized spatial unit
@@ -79,7 +80,7 @@ while 1
     Update(O,dt);
     
     if mod(O.t,10000)==0
-%         keyboard
+        keyboard
     end
     
     % Real time plotting

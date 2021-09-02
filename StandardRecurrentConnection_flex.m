@@ -27,10 +27,11 @@ Adj = p.Results.Adjust;
 
 % Scale parameter for width of Gaussians
 scale = 1;
-adjust = 1.35;
-synaptic_inhibition = adjust*250;
-global_inhibition = 0.0175;
-hat_scale = 1.23;
+adjust = 1.20;
+synaptic_inhibition = adjust*245;
+global_inhibition = 4*50;
+synaptic_excitation = adjust * 120;
+hat_scale = 1.2;
 
 % Build recurrent excitation & configure it
 P_E = Projection(O,O,'Type','E','Topology','linear');
@@ -40,7 +41,7 @@ P_E = Projection(O,O,'Type','E','Topology','linear');
 Sigma_E = diag(O.n) * 0.02 * hat_scale; % percentage of the field 
 Kernelize(P_E, @(x) mvnpdf(x,[0 0],Sigma_E.^2), 'KerSize', ceil(2.5*diag(Sigma_E)));
 if Adj;AdjustWeight(P_E);end % Adjust strength at space border; 
-P_E.WPost = P_E.WPost * adjust * 100; % Projection strength 
+P_E.WPost = P_E.WPost * synaptic_excitation; % Projection strength 
 
 % Build recurrent inhibition & configure it
 P_I1 = Projection(O,O,'Type','I','Topology','linear');
