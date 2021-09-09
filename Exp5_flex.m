@@ -28,7 +28,7 @@ if n_trial == 1
     % the same number of neurons here
 %     stim_x = [0 0.05].*O.param.grain;
     
-    stim_t = [2 5]; % Unit: second
+    stim_t = [2 3]; % Unit: second
     O.Ext = ExternalInput;
     O.Ext.Target = O;       
     O.Ext.Deterministic = @(x,t) ((stim_x(2)*O.n(1))>x(:,1) & x(:,1)>(stim_x(1)*O.n(1))) .* ...
@@ -46,7 +46,7 @@ end
 %% Simulation settings 
 dt = 1; % ms
 if n_trial == 1
-    R = CreateRecorder(O,20000); % The 2nd argument is Recorder.Capacity 
+    R = CreateRecorder(O,12000); % The 2nd argument is Recorder.Capacity 
     T_end = R.Capacity - 1; % simulation end time.  
     AddVar(R,'EPSC');
     AddVar(R,'IPSC'); % To simulate LFP, you need to record PSCs.
@@ -79,8 +79,8 @@ while 1
     WriteToRecorder(O); 
     Update(O,dt);
     
-    if mod(O.t,10000)==0
-        keyboard
+    if mod(O.t,20000)==0
+%        keyboard
     end
     
     % Real time plotting

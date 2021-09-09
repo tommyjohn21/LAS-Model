@@ -27,11 +27,11 @@ Adj = p.Results.Adjust;
 
 % Scale parameter for width of Gaussians
 scale = 1;
-adjust = 1.20;
-synaptic_inhibition = adjust*245;
-global_inhibition = 4*50;
-synaptic_excitation = adjust * 120;
-hat_scale = 1.2;
+adjust = 1.0;
+synaptic_inhibition = adjust*250;
+global_inhibition = 6*50; % 7.5 
+synaptic_excitation = adjust * 100;
+hat_scale = 1.5; % 1.05
 
 % Build recurrent excitation & configure it
 P_E = Projection(O,O,'Type','E','Topology','linear');
