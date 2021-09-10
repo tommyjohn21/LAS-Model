@@ -29,7 +29,7 @@ Adj = p.Results.Adjust;
 scale = 1;
 adjust = 1.0;
 synaptic_inhibition = adjust*250;
-global_inhibition = 25; % 7.5 
+global_inhibition = 50; % 7.5 
 synaptic_excitation = adjust * 100;
 hat_scale = 1; % 1.05
 

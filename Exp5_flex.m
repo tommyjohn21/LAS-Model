@@ -46,7 +46,7 @@ end
 %% Simulation settings 
 dt = 1; % ms
 if n_trial == 1
-    R = CreateRecorder(O,100000); % The 2nd argument is Recorder.Capacity 
+    R = CreateRecorder(O,25000); % The 2nd argument is Recorder.Capacity 
     T_end = R.Capacity - 1; % simulation end time.  
     AddVar(R,'EPSC');
     AddVar(R,'IPSC'); % To simulate LFP, you need to record PSCs.
@@ -80,7 +80,7 @@ while 1
     Update(O,dt);
     
     if mod(O.t,10000)==0
-       keyboard
+%        keyboard
     end
     
     % Real time plotting
