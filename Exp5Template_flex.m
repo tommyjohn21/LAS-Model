@@ -36,25 +36,26 @@ f = @(u) f0+fs.*exp(u./beta); % unit: kHz
 %   Decreasing g_K_max increases excitability
 %   Increasing g_K_max decreases excitability
 
-dyn_scale = 1.0;
-dyn_scale_Cl = 1 * dyn_scale;
-dyn_scale_gK = 1 * dyn_scale;
-time_scale = 1;
-amp = 1;
-
-g_K_max = gen_param(52/dyn_scale_gK*amp,0,n,1);  % 42
+% dyn_scale = 1.0;
+% dyn_scale_Cl = 1 * dyn_scale;
+% dyn_scale_gK = 1 * dyn_scale;
+% time_scale = 1;
+% amp = 1;
+% 
+% g_K_max = gen_param(52/dyn_scale_gK*amp,0,n,1);  % 42
 % g_K_max = gen_param(50,0,n,1); % Fig 5
-% g_K_max = gen_param(40,0,n,1); % Sup 2A
-
-% Decreasing tau_Cl allows for improved Cl gradient, and improved
-% inhibition; larger values mean unable to inhibit activity
-tau_K = gen_param(1950*time_scale/dyn_scale_gK,0,[n,1],1); % 1525 Can also be function
-% E_K = gen_param(-90,0,n,0);
-
-tau_syn.I_global = gen_param(15,0,n,0); % Inhibitory synaptic time constant for global inhibition
-% tau_syn.I_global = gen_param(15,0,n,0); % Inhibitory synaptic time constant for global inhibition
-Vd_Cl = gen_param(0.33./dyn_scale_Cl*amp,0,n,0); % .325
-% Vd_Cl = Vd_Cl./dyn_scale;
-% Cl_in_eq = gen_param(5.5,0,n,1); % The equilibruim intracellular chloride concentration, 
-tau_Cl = gen_param(1600*time_scale/dyn_scale_Cl,0,n,1); % 1455 Chloride clearance time constant
-% Cl_in = Cl_in_eq;
+g_K_max = gen_param(90,0,n,1); % Sup 2A
+% 
+% % Decreasing tau_Cl allows for improved Cl gradient, and improved
+% % inhibition; larger values mean unable to inhibit activity
+% tau_K = gen_param(1950*time_scale/dyn_scale_gK,0,[n,1],1); % 1525 Can also be function
+% % E_K = gen_param(-90,0,n,0);
+% 
+tau_syn.I_global = gen_param(15/2,0,n,0); % Inhibitory synaptic time constant for global inhibition
+% % tau_syn.I_global = gen_param(15,0,n,0); % Inhibitory synaptic time constant for global inhibition
+% Vd_Cl = gen_param(0.33./dyn_scale_Cl*amp,0,n,0); % .325
+Vd_Cl = gen_param(0.30,0,n,0); % .325
+% % Vd_Cl = Vd_Cl./dyn_scale;
+% % Cl_in_eq = gen_param(5.5,0,n,1); % The equilibruim intracellular chloride concentration, 
+% tau_Cl = gen_param(1600*time_scale/dyn_scale_Cl,0,n,1); % 1455 Chloride clearance time constant
+% % Cl_in = Cl_in_eq;
