@@ -11,23 +11,16 @@ end
 %% Lay out the model and build recurrent connection
 if n_trial == 1 % If it is the first seizure
     % Lay out the field
-    O = SpikingModel_flex('Exp5Template_flex');
+    O = SpikingModel('Exp5Template_mini');
     % Build recurrent connection
-    [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_flex( O );
+    [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_mini( O );
 end
 
 %% External input
 if n_trial == 1 
     Ic = 200;
 
-    stim_x = [0.475 0.525];
-%     stim_x = [0 0.05];
-%     stim_x = [0.1 0.15]; % normalized spatial unit
-    
-    % If initial model was 2000 units, 5% is 100 neurons; let us stimulate
-    % the same number of neurons here
-%     stim_x = [0 0.05].*O.param.grain;
-    
+    stim_x = [0.475 0.525];    
     stim_t = [2 5]; % Unit: second
     O.Ext = ExternalInput;
     O.Ext.Target = O;       
@@ -50,16 +43,13 @@ if n_trial == 1
     T_end = R.Capacity - 1; % simulation end time.  
     AddVar(R,'EPSC');
     AddVar(R,'IPSC'); % To simulate LFP, you need to record PSCs.
-%     AddVar(R,'global_inhibition')
-%     AddVar(R,'inhibitory_current')
-%     AddVar(R,'excitatory_current')
 end
 
 %% Enable STDP
 O.Proj.In(1).STDP.Enabled = 1;
 KernelToMultiplication(O.Proj.In(1));
-O.Proj.In(1).STDP.tau_LTD = O.Proj.In(1).STDP.tau_LTD./O.param.time_grain;
-O.Proj.In(1).STDP.tau_LTP = O.Proj.In(1).STDP.tau_LTP./O.param.time_grain;
+O.Proj.In(1).STDP.tau_LTD = O.Proj.In(1).STDP.tau_LTD./O.param.time_compression;
+O.Proj.In(1).STDP.tau_LTP = O.Proj.In(1).STDP.tau_LTP./O.param.time_compression;
 
 %% Realtime plot setting
 flag_realtime_plot = 0; % whether you want to see simulation result real time or not

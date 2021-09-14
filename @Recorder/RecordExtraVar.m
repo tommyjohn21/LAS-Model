@@ -48,13 +48,6 @@ switch VarName
         % Step 2: Calculate PSCs
         E_Cl = 26.7*log(O.Cl_in./O.param.Cl_ex);                        
         R.Var.IPSC(:,R.Idx) = g .* (E_Cl-O.V) ./ O.param.f_max;
-    case 'global_inhibition'
-        R.Var.global_inhibition(:,R.Idx) = O.Input.I_global;    
-    case 'inhibitory_current'
-        E_Cl = 26.7*log(O.Cl_in./O.param.Cl_ex);
-        R.Var.inhibitory_current(:,R.Idx) = (O.Input.I + O.Input.I_global) ./ (O.param.f_max) .* E_Cl;
-    case 'excitatory_current'
-        R.Var.excitatory_current(:,R.Idx) = O.Input.E ./ (O.param.f_max) .* O.param.E_Esyn;
 end
 
 end
