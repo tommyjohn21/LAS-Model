@@ -55,6 +55,12 @@ if n_trial == 1
 %     AddVar(R,'excitatory_current')
 end
 
+%% Enable STDP
+O.Proj.In(1).STDP.Enabled = 1;
+KernelToMultiplication(O.Proj.In(1));
+O.Proj.In(1).STDP.tau_LTD = O.Proj.In(1).STDP.tau_LTD./O.param.time_grain;
+O.Proj.In(1).STDP.tau_LTP = O.Proj.In(1).STDP.tau_LTP./O.param.time_grain;
+
 %% Realtime plot setting
 flag_realtime_plot = 0; % whether you want to see simulation result real time or not
 T_plot_cycle = 1000; % How often updating the figures

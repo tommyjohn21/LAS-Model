@@ -27,18 +27,18 @@ Adj = p.Results.Adjust;
 
 % Scale parameter for width of Gaussians
 scale = 1;
-adjust = 1.0;
+adjust = 1;
 synaptic_inhibition = adjust*250;
 global_inhibition = 50; % 7.5 
 synaptic_excitation = adjust * 100;
-hat_scale = 1; % 1.05
+hat_scale = 2; % 1.05
 
 % Build recurrent excitation & configure it
 P_E = Projection(O,O,'Type','E','Topology','linear');
 % Change sigma calculation here as was going to be 2% regardless of line
 % size
 % Sigma_E = scale.*diag(O.n) * 0.02 .* diag([2000./2400 1]); % percentage of the field 
-Sigma_E = diag(O.n) * 0.04 * hat_scale; % percentage of the field 
+Sigma_E = diag(O.n) * 0.02 * hat_scale; % percentage of the field 
 Kernelize(P_E, @(x) mvnpdf(x,[0 0],Sigma_E.^2), 'KerSize', ceil(2.5*diag(Sigma_E)));
 if Adj;AdjustWeight(P_E);end % Adjust strength at space border; 
 P_E.WPost = P_E.WPost * synaptic_excitation; % Projection strength 
@@ -48,7 +48,7 @@ P_I1 = Projection(O,O,'Type','I','Topology','linear');
 % Change sigma calculation here as was going to be 2% regardless of line
 % size
 % Sigma_I = scale.*diag(O.n) * 0.03 .* diag([2000./2400 1]); % percentage of the field  
-Sigma_I = diag(O.n) * 0.06 * hat_scale; % percentage of the field  
+Sigma_I = diag(O.n) * 0.03 * hat_scale; % percentage of the field  
 Kernelize(P_I1, @(x) mvnpdf(x,[0 0],Sigma_I.^2), 'KerSize', ceil(2.5*diag(Sigma_I)));
 if Adj;AdjustWeight(P_I1);end % Adjust strength at space border; 
 P_I1.WPost = P_I1.WPost * synaptic_inhibition; % Projection strength
