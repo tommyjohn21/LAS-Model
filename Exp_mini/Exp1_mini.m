@@ -1,40 +1,51 @@
-%%% Exp1_mini computes threshold of mini model by brute force %%%
 
-%%% Preliminaries %%%
-addpath(genpath('.')) % set path with all current subfolders
+%%% Allow access to local function handles %%%
+function fh = Exp1_mini
 
-%%% Settings %%%
-stim_durations = fliplr(0:0.01:3); % start with stronger stims for fast detection
-n_sims = 100;
+fh.simulate_mini_by_stim_dur = @simulate_mini_by_stim_dur;
+fh.run_Exp1_mini = @run_Exp1_mini;
 
-%%% Conditional parallel computation %%%
-if strcmp(computer,'GLNXA64') % if server
-    parfor i = 1:numel(stim_durations)
-        
-        % Save dir
-        savedir = '~/detector_mini/';
-        
-        % Function as below
-        d = simulate_mini_by_stim_dur(n_sims,stim_durations(i));
-        parsave([savedir 'stim_dur_' num2str(stim_durations(i)) '.mat'],d)
-        
+end
+
+
+function run_Exp1_mini
+    %%% Exp1_mini computes threshold of mini model by brute force %%%
+
+    %%% Settings %%%
+    stim_durations = fliplr(0:0.01:3); % start with stronger stims for fast detection
+    n_sims = 100;
+    location = [0.475 0.525];
+
+    %%% Conditional parallel computation %%%
+    if strcmp(computer,'GLNXA64') % if server
+        parfor i = 1:numel(stim_durations)
+
+            % Save dir
+            savedir = '~/detector_mini/';
+
+            % Function as below
+            d = simulate_mini_by_stim_dur(n_sims,stim_durations(i),location);
+            parsave([savedir 'stim_dur_' num2str(stim_durations(i)) '.mat'],d)
+
+        end
+    else % local
+        for i = 1:numel(stim_durations)
+
+            % Save dir
+            savedir = '~Desktop/detector_mini/';
+
+            % Function as below
+            d = simulate_mini_by_stim_dur(n_sims,stim_durations(i),location);
+            parsave([savedir 'stim_dur_' num2str(stim_durations(i)) '.mat'],d)
+
+        end
     end
-else % local
-    for i = 1:numel(stim_durations)
-        
-        % Save dir
-        savedir = '~Desktop/detector_mini/';
-                
-        % Function as below
-        d = simulate_mini_by_stim_dur(n_sims,stim_durations(i));
-        parsave([savedir 'stim_dur_' num2str(stim_durations(i)) '.mat'],d)
-        
-    end
+
 end
 
 %% Simulate detection, save output
 
-function output = simulate_mini_by_stim_dur(n,stim_dur)
+function output = simulate_mini_by_stim_dur(n,stim_dur,location)
 % Repeat Exp5_mini n times for a given stim_dur to create threshold curve
 
 for i = 1:n
@@ -53,7 +64,7 @@ for i = 1:n
     
     %% External input
     Ic = 200;
-    stim_x = [0.475 0.525];
+    stim_x = location;
     stim_t = [2 2+stim_dur]; % Unit: second
     O.Ext = ExternalInput;
     O.Ext.Target = O;
@@ -105,7 +116,7 @@ for i = 1:n
     %     output.O = O;
     
     %% Clear workspace
-    clearvars('-except','output','n','stim_dur')
+    clearvars('-except','output','n','stim_dur','location')
     
 end
 

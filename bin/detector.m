@@ -23,7 +23,8 @@ fdP = filtfilt(b,a,dP); % Filtered power
 % Note: we will set the seizure threshold very high, as we care more about
 % detecting (binary) vs. not (as opposed to on-the-fly detection where
 % timing matters)
-thr = 1e4; % Arbitrary threshold
+% thr = 1e4; % Arbitrary threshold (central stimulation)
+thr = 2.25e3; % Arbitrary threshold (edge stimulation)
 seizure = any(fdP>thr);
 
 end
