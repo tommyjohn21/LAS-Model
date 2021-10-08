@@ -101,7 +101,7 @@ for i = 1:n
         % Detect seizures
         if mod(O.t,5000)==0 && O.t>(stim_t(end)*1000) % no need to look until end of stim
             [seizure,dP,fdP] = detector(O,dt);
-            if seizure, break, end
+%             if seizure, break, end
             disp(['No seizure by t = ' num2str(O.t/1000) 's, continue'])
         end
         
@@ -109,7 +109,7 @@ for i = 1:n
     
     
     %% Format output
-    %     output(i).V = O.Recorder.Var.V(:,1:O.t);
+    output(i).V = O.Recorder.Var.V(:,1:O.t);
     output(i).dP = dP;
     output(i).fdP = fdP;
     output(i).seizure = seizure;

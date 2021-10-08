@@ -14,8 +14,7 @@ dP = sum(dP,1);
 
 %% Low pass filter
 fs = 1000*(1./dt); % Compute sampling frequency (Hz)
-freq_cutoff = 0.001; % Cutoff frequency (Hz)
-[b,a] = butter(1,(1./fs/2)); % First order, low-pass butterworth filter
+[b,a] = butter(1,(1./fs/2),'high'); % First order, low-pass butterworth filter
 fdP = filtfilt(b,a,dP); % Filtered power
 
 %% Arbitrary cutoff
@@ -24,7 +23,7 @@ fdP = filtfilt(b,a,dP); % Filtered power
 % detecting (binary) vs. not (as opposed to on-the-fly detection where
 % timing matters)
 % thr = 1e4; % Arbitrary threshold (central stimulation)
-thr = 2.25e3; % Arbitrary threshold (edge stimulation)
+thr = 5e3; % Arbitrary threshold (edge stimulation)
 seizure = any(fdP>thr);
 
 end

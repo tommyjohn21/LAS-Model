@@ -3,14 +3,21 @@ h = Exp1_mini;
 
 %% Simulate with stimulus durations as below
 if 1
+    
+% location = [0.475 0.525];
+location = [0 0.05];
+
 %% Stim dur of 3s
-output = h.simulate_mini_by_stim_dur(3,3);
+% output = h.simulate_mini_by_stim_dur(3,3,location);
+output = h.simulate_mini_by_stim_dur(3,6.25,location);
 
 %% Stim dur of 0.5s
-output = [output h.simulate_mini_by_stim_dur(3,0.5)];
+% output = [output h.simulate_mini_by_stim_dur(3,0.5,location)];
+output = [output h.simulate_mini_by_stim_dur(3,2,location)];
 
 %% Stim dur of 1.5s
-output = [output h.simulate_mini_by_stim_dur(3,1.6)];
+% output = [output h.simulate_mini_by_stim_dur(3,1.6,location)];
+output = [output h.simulate_mini_by_stim_dur(3,3.5,location)];
 
 end
 return
@@ -31,8 +38,8 @@ clim = caxis;
 c.Label.String = 'Voltage (mV)';
 a.FontSize = 18;
 figname = 'modelseizure';
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
 
 %% Voltage plot for 1 neuron
 f = figure();
@@ -44,8 +51,8 @@ a.XLim = [0 20;]
 a.YLabel.String = 'Voltage (mV)';
 a.FontSize = 18;
 figname = 'neuron250'
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
 
 %% dV/dt for 1 neuron
 f = figure();
@@ -57,8 +64,8 @@ a.XLim = [0 20;]
 a.YLabel.String = 'dV/dt (mV/ms)';
 a.FontSize = 18;
 figname = 'neuron250dvdt'
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
 
 %% power of dV/dt for 1 neuron
 f = figure();
@@ -71,8 +78,8 @@ a.XLim = [0 20];
 a.YLabel.String = '(dV/dt)^2 (mV/ms)^2';
 a.FontSize = 18;
 figname = 'neuron250dvdt_pow'
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
 
 %% power of dV/dt for all neurons
 f = figure();
@@ -87,8 +94,8 @@ a.FontSize = 18;
 c = colorbar; 
 c.Label.String = '(dV/dt)^2 (mV/ms)^2';
 figname = 'neurondvdt_pow';
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
 
 %% Look specifically at stimulation of voltage
 f = figure();
@@ -109,8 +116,8 @@ c.Label.String = 'Voltage (mV)';
 a.FontSize = 18;
 % figname = 'modelseizure_stim';
 figname = 'modelseizure_stim_diff';
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
 
 %% summed power of dV/dt for across all neurons
 f = figure();
@@ -128,12 +135,13 @@ a.FontSize = 18;
 ylim = a.YLim;
 legend('\Sigma (dV/dt)^2','\Sigma (dV/dt)^2 filtered at 0.001 Hz')
 figname = 'seizure_pow';
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
 
 %% threshold demo
 f = figure();
 plot([0.001 25],[1e4 1e4],'Color','k');
+% plot([0.001 25],[2.25e3 2.25e3],'Color','k');
 hold on
 x = output(1).fdP;
 plot(0.002:0.001:24.999,x,'LineWidth',3,'Color',[0 0.4470 0.7410]);
@@ -145,12 +153,13 @@ a.FontSize = 18;
 a.YLim = ylim;
 legend('Threshold (1e4)','\Sigma (dV/dt)^2 filtered at 0.001 Hz')
 figname = 'seizure_pow_thresh';
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
 
 %% plot fdP with each of the simulations
 f = figure();
-plot([0.001 25],[1e4 1e4],'Color','k','HandleVisibility','off');
+% plot([0.001 25],[1e4 1e4],'Color','k','HandleVisibility','off');
+plot([0.001 25],[5e3 5e3],'Color','k','HandleVisibility','off');
 hold on
 p = [];
 colors = [[0 0.4470 0.7410]; [0.8500 0.3250 0.0980]; [ 0.9290 0.6940 0.1250]];
@@ -170,10 +179,10 @@ a.YLabel.String = '\Sigma (dV/dt)^2';
 a.FontSize = 18;
 a.YLim = [0 1.4e4];
 a.XLim = [0 25];
-legend('t_{stim}=3s','t_{stim}=1.6s','t_{stim}=0.5s','Location','NorthWest')
+legend('t_{stim}=6.25s','t_{stim}=3.5s','t_{stim}=2s','Location','NorthWest')
 figname = 'seizure_pow_thresh';
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
 
 %% plot seizures for each stim condition -- t = 0.5s
 f = figure();
@@ -188,8 +197,8 @@ caxis(clim);
 c.Label.String = 'Voltage (mV)';
 a.FontSize = 18;
 figname = 'modelseizure_05';
-saveas(f,['~/Desktop/' figname '.svg'])
-close(f)
+% saveas(f,['~/Desktop/' figname '.svg'])
+% close(f)
 
 
 %% plot seizures for each stim condition
@@ -200,14 +209,14 @@ a = gca;
 a.XLabel.String = 'Time (s)';
 a.XLim = [0 20];
 a.YLabel.String = 'Neuron index';
-a.Title.String = 'Model seizure t_{stim}=1.6s';
+a.Title.String = 'Model seizure t_{stim}=3.5s';
 c = colorbar;
 caxis(clim);
 c.Label.String = 'Voltage (mV)';
 a.FontSize = 18;
 figname = 'modelseizure_161';
 saveas(f,['~/Desktop/' figname '.svg'])
-% close(f)
+close(f)
 
 f = figure();
 imagesc(0:0.001:size(output(8).dP,2)/1000,1:500,output(8).V);
@@ -215,14 +224,14 @@ a = gca;
 a.XLabel.String = 'Time (s)';
 a.XLim = [0 20];
 a.YLabel.String = 'Neuron index';
-a.Title.String = 'Model seizure t_{stim}=1.6s';
+a.Title.String = 'Model seizure t_{stim}=3.5s';
 c = colorbar;
 caxis(clim);
 c.Label.String = 'Voltage (mV)';
 a.FontSize = 18;
 figname = 'modelseizure_162';
 saveas(f,['~/Desktop/' figname '.svg'])
-% close(f)
+close(f)
 
 f = figure();
 imagesc(0:0.001:size(output(9).dP,2)/1000,1:500,output(9).V);
@@ -230,13 +239,13 @@ a = gca;
 a.XLabel.String = 'Time (s)';
 a.XLim = [0 20];
 a.YLabel.String = 'Neuron index';
-a.Title.String = 'Model seizure t_{stim}=1.6s';
+a.Title.String = 'Model seizure t_{stim}=3.5s';
 c = colorbar;
 caxis(clim);
 c.Label.String = 'Voltage (mV)';
 a.FontSize = 18;
 figname = 'modelseizure_163';
 saveas(f,['~/Desktop/' figname '.svg'])
-% close(f)
+close(f)
 
 
