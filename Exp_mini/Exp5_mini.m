@@ -14,8 +14,8 @@ param.threshold_stimulations = [1:0.05:3];
 param.threshold_savedir = '~/Exp5_mini/';
 % param.flag_return_voltage_trace = true;
 % param.flag_return_state_trace = true;
-% param.flag_kill_if_seizure = false;
-% param.flag_kill_if_wave_collapsed = false;
+param.flag_kill_if_seizure = false;
+param.flag_kill_if_wave_collapsed = false;
 
 %% Run experiment with parameters
 sbm.find_mini_model_threshold(param)

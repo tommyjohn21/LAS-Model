@@ -108,14 +108,14 @@ p.no_simulations = p.threshold_reptitions; % update how many simulations per sti
 
 %%% Conditional parallel computation %%%
     if strcmp(computer,'GLNXA64') % if server
-        parfor i = p.threshold_stimulations
+        parfor i = 1:numel(p.threshold_stimulations)
 
             % Update stimulation in way that can be parsed by parfor
-            q = setfield(p,'stim_duration',i)
+            q = setfield(p,'stim_duration',p.threshold_stimulations(i))
             
             % Function as below
             d = simulate_mini_model(q);
-            parsave([q.threshold_savedir 'stim_dur_' num2str(i) '.mat'],d)
+            parsave([q.threshold_savedir 'stim_dur_' num2str(q.stim_duration) '.mat'],d)
 
         end
     else % local
@@ -368,6 +368,179 @@ detector_metrics.wave_collapsed = sum(states>0)>0 & all(states(end-100:end)==0);
 
 if p.flag_return_state_trace
    detector_metrics.state_trace = state_trace; 
+end
+
+%% Plotting scripts if needed
+% Plotting scripts to show effectiveness of detector on a real world
+% example (included to generate plots as needed, but default off)
+if 0
+    
+    % Plot seizure    
+    f = figure();
+    a = gca();
+    imagesc([1:O.t]./1000,1:prod(O.n),O.Recorder.Var.V(:,1:O.t))
+    title(['Model seizure (t = ' num2str(p.stim_duration) 's)'])
+    ylabel('Neuron index')
+    xlabel('Time (s)')
+    a.FontSize = 18;
+    c = colorbar;
+    c.Label.String = 'Voltage (mV)';
+    a.FontSize = 18;
+    figname = 'modelseizure';
+    saveas(f,['~/Desktop/' figname '.svg'])
+    
+    % Extract voltage traces from neighbors
+    % V = O.Recorder.Var.V(neighbors,1:O.t);
+    V = O.Recorder.Var.V(setdiff(1:prod(O.n),st_neu),1:O.t);
+    
+    % Extract g_K and Cl_in from all non-stimulated neurons
+    g_K = O.Recorder.Var.g_K(setdiff(1:prod(O.n),st_neu),1:O.t);
+    Cl_in = O.Recorder.Var.Cl_in(setdiff(1:prod(O.n),st_neu),1:O.t);
+    
+    % Kernel for Gaussian convoluation
+    g = normpdf(-4:6/1000:4,0,1); % gaussian for filtering
+    g = g./sum(g); % normalize AUC
+    
+    % Compute tonic wavefront
+    tonic = zscore(Cl_in,[],'all') - zscore(g_K,[],'all');
+
+    % Plot tonic wavefront (reorder first)
+    [~,order] = sort([setdiff(1:prod(O.n),st_neu),st_neu]); % reorder rows
+    x = [tonic; zeros(numel(st_neu),size(V,2))]; % Add stimulated neurons for visualization
+    x = x(order,:); % reorder with placeholders for st_neu
+
+    f = figure();
+    a = gca();
+    imagesc([1:O.t]./1000,1:prod(O.n),x)
+    title('z(Cl_{in}) - z(g_K)')
+    ylabel('Neuron index')
+    xlabel('Time (s)')
+    a.FontSize = 18;
+    c = colorbar;
+    c.Label.String = 'z-score (au)'
+    a.FontSize = 18;
+    figname = 'tonic-1';
+    saveas(f,['~/Desktop/' figname '.svg'])
+    
+    % Continue with detector generation
+    tonic = imgaussfilt(tonic,10); % Gaussian blur for smoothing
+    tonic_baseline = tonic(:,1:2000);
+    tonic_baseline_mean = mean(tonic_baseline(:));
+    tonic_baseline_std = std(tonic_baseline(:));
+    z = @(x,m,sd) (x-m)./sd;
+    tonic = z(tonic,tonic_baseline_mean,tonic_baseline_std);
+    
+    % Plot tonic wavefront (reorder first)
+    [~,order] = sort([setdiff(1:prod(O.n),st_neu),st_neu]); % reorder rows
+    x = [tonic; zeros(numel(st_neu),size(V,2))]; % Add stimulated neurons for visualization
+    x = x(order,:); % reorder with placeholders for st_neu
+
+    f = figure();
+    a = gca();
+    imagesc([1:O.t]./1000,1:prod(O.n),x)
+    title('z(Cl_{in}) - z(g_K), smoothed and normalized')
+    ylabel('Neuron index')
+    xlabel('Time (s)')
+    a.FontSize = 18;
+    c = colorbar;
+    c.Label.String = 'z-score (au)'
+    a.FontSize = 18;
+    figname = 'tonic-2';
+    saveas(f,['~/Desktop/' figname '.svg'])
+    
+    % Continue with detector generation
+    f = figure();
+    a = gca();
+    imagesc([1:O.t]./1000,1:prod(O.n),x>cutoff_tonic)
+    title(['z(Cl_{in}) - z(g_K), thresholded at \sigma = ' num2str(cutoff_tonic)])
+    ylabel('Neuron index')
+    xlabel('Time (s)')
+    a.FontSize = 18;
+    c = colorbar;
+    c.Label.String = 'State (binary)'
+    a.FontSize = 18;
+    figname = 'tonic-3';
+    saveas(f,['~/Desktop/' figname '.svg'])
+    
+    % Compute clonic wavefront
+    % Time course of alpha power
+    ab = [];
+    for n = 1:size(V,1)
+        [wt,f] = cwt(V(n,:),1000./p.dt);
+        ab = [ab; abs(mean(wt(f>5&f<15,:),1))];
+        % s = zscore(real(wt(f>300,:)),[],2)>1; % spike train
+        % fr = [fr; mean(cell2mat(cellfun(@(ss)conv(ss,g,'same'),num2cell(s,2),'UniformOutput',false)))]; % firing rate
+    end
+    
+    % Plot clonic core (reorder first)
+    x = [ab; zeros(numel(st_neu),size(V,2))]; % Add stimulated neurons for visualization
+    x = x(order,:); % reorder with placeholders for st_neu
+    
+    f = figure();
+    a = gca();
+    imagesc([1:O.t]./1000,1:prod(O.n),x)
+    title('Average oscillatory power (5-15 Hz)')
+    ylabel('Neuron index')
+    xlabel('Time (s)')
+    a.FontSize = 18;
+    c = colorbar;
+    c.Label.String = 'Power (au)';
+    figname = 'clonic-1';
+    saveas(f,['~/Desktop/' figname '.svg'])
+    
+    % Smooth clonic core, normalize
+    clonic = conv2(lowpass(ab,0.05),g,'same');
+    clonic_baseline = clonic(:,1:2000);
+    clonic_baseline_mean = mean(clonic_baseline(:));
+    clonic_baseline_std = std(clonic_baseline(:));
+    clonic = z(clonic,clonic_baseline_mean,clonic_baseline_std);
+
+    % Plot clonic core (reorder first)
+    x = [clonic; zeros(numel(st_neu),size(V,2))]; % Add stimulated neurons for visualization
+    x = x(order,:); % reorder with placeholders for st_neu
+
+    f = figure();
+    a = gca();
+    imagesc([1:O.t]./1000,1:prod(O.n),x)
+    title('Average oscillatory power (5-15 Hz), smoothed and normalized')
+    ylabel('Neuron index')
+    xlabel('Time (s)')
+    a.FontSize = 18;
+    c = colorbar;
+    c.Label.String = 'z-score (au)';
+    figname = 'clonic-2';
+    saveas(f,['~/Desktop/' figname '.svg'])
+    
+    % Continue with detector generation
+    f = figure();
+    a = gca();
+    imagesc([1:O.t]./1000,1:prod(O.n),x>cutoff_clonic)
+    title(['Power (5-15 Hz), thresholded at \sigma = ' num2str(cutoff_clonic)])
+    ylabel('Neuron index')
+    xlabel('Time (s)')
+    a.FontSize = 18;
+    c = colorbar;
+    c.Label.String = 'State (binary)';
+    figname = 'clonic-3';
+    saveas(f,['~/Desktop/' figname '.svg'])
+    
+    % Construct state trace
+    state_trace = (tonic>cutoff_tonic)+2*(clonic>cutoff_clonic);
+    state_trace = [state_trace; zeros(numel(st_neu),size(V,2))]; % Add stimulated neurons for visualization
+    state_trace = state_trace(order,:); % reorder with placeholders for st_neu
+    
+    f = figure();
+    a = gca();
+    imagesc([1:O.t]./1000,1:prod(O.n),state_trace)
+    title('State trace')
+    ylabel('Neuron index')
+    xlabel('Time (s)')
+    a.FontSize = 18;
+    c = colorbar;
+    c.Label.String = 'State (categorical)';
+    figname = 'state';
+    saveas(f,['~/Desktop/' figname '.svg'])
+    
 end
 
 end

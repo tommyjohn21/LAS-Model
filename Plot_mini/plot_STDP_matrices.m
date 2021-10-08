@@ -3,7 +3,7 @@
 %%% those results
 
 %% Load ~10 STDP matrices
-f = dir('~/Desktop/Exp3_mini/');
+f = dir('~/Desktop/Exp6_mini/');
 D = [];
 for i = 1:10
     if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')), continue, end
@@ -15,7 +15,7 @@ d = D;
 
 %% Plot a set of matrices
 numplots = 3;
-start = 3
+start = 5;
 f = figure;
 t = tiledlayout(2,numplots);
 for i = start:start+numplots-1 % simulations to cycle through
@@ -58,7 +58,7 @@ figname = ['dW_matrices'];
 saveas(f,['~/Desktop/' figname '.svg'])
 
 %% Load only dW matrices
-f = dir('~/Desktop/Exp3_mini/');
+f = dir('~/Desktop/Exp6_mini/');
 dW = [];
 i = 0; % which file in the directory
 j = 1; % how many files have been loaded
@@ -98,7 +98,7 @@ figname = ['15_dW_matrices'];
 saveas(f,['~/Desktop/' figname '.svg'])
 
 %% Create average dW matrix
-f = dir('~/Desktop/Exp3_mini/');
+f = dir('~/Desktop/Exp6_mini/');
 D = [];
 C = []; % Length of clonic core
 S = []; % Length of seizure
