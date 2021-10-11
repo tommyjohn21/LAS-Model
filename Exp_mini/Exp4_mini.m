@@ -8,7 +8,7 @@ sbm = simulation_bin_mini;
 f = dir('~/Desktop/Exp3_mini/');
 D = [];
 for i = 1:numel(f)
-    if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')), continue, end
+    if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')) || any(strfind(f(i).name,'Wn')), continue, end
     load([f(i).folder '/' f(i).name])
     D = cat(3,D,d.dW);
 end

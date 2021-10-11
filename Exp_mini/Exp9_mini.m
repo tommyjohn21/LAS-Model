@@ -1,5 +1,5 @@
-%%% Detemine mini model seizure threshold on central stimulation *after* one
-%%% round of STDP
+%%% Detemine mini model seizure threshold after carefully selected dW
+%%% matrix from round one (i.e. cherry picked)
 
 %% Access simulation_bin_mini tools
 sbm = simulation_bin_mini;
@@ -14,6 +14,11 @@ for i = 1:numel(f)
 end
 % Change of variable for consistency with code below
 dWave = mean(D,3);
+
+%% Upweight dWave
+scalar = 1.1; % produces max value in central stim that is the same as max value in edge stim
+
+dWave = scalar.*dWave;
 
 %% Experiment parameters
 % Call default params
