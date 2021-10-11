@@ -9,13 +9,16 @@ f = dir('~/Exp6_mini/');
 D = [];
 F = [];
 for i = 1:numel(f)
-    if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')) || any(strfind(f(i).name,'Wn')), continue, end
+    if any(strfind(f(i).name,'Wn')), load([f(i).folder '/' f(i).name]), continue, end
+    if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')), continue, end
     load([f(i).folder '/' f(i).name])
+    sprintf(['Loading ' f(i).folder '/' f(i).name '...'])
     F = cat(3,F,lowpass(lowpass(d.dW,10/500,'ImpulseResponse','iir').',10/500,'ImpulseResponse','iir').');  
     D = cat(3,D,d.dW);  
 end
 
 %% Compute nodes/types
+sprintf('Parsing nodes/types...')
 
 % Pull out fixed points
 C = zeros(100,size(F,2)-1);
