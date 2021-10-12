@@ -70,7 +70,7 @@ while j <=15
     j = j+1;
 end
 
-%% Plot 10 dW matrices
+%% Plot 15 dW matrices
 f = figure;
 t = tiledlayout(3,5);
 
@@ -194,14 +194,233 @@ a.Title.String = ['Duration of clonic core vs. Duration of seizure'];
 figname = ['clonic_vs_seizure'];
 saveas(fig,['~/Desktop/' figname '.svg'])
 
-%% Extract off diagonal
-length = numel(diag(dWave));
-
-x = [];
-for i = -60:-10
-    x = [x, [diag(dWave,i); nan(abs(i),1)]];
+%% Create average dW matrix
+f = dir('~/Desktop/Exp6_mini/');
+D = [];
+F = [];
+for i = 1:numel(f)
+    if any(strfind(f(i).name,'Wn')), load([f(i).folder '/' f(i).name]), continue, end
+    if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')), continue, end
+    load([f(i).folder '/' f(i).name])
+    fprintf(['Loading ' f(i).folder '/' f(i).name '...\n'])
+    F = cat(3,F,lowpass(lowpass(d.dW,10/500,'ImpulseResponse','iir').',10/500,'ImpulseResponse','iir').');  
+    D = cat(3,D,d.dW);  
 end
-y = smooth(nanmean(x,2),10);
+
+dWave = mean(D,3);
+
+%% Net effect of dWave
+f = figure;
+imagesc(1:500,1:500,dWave.*Wn-Wn)
+a = gca;
+a.XLabel.String = 'Neuron index';
+a.YLabel.String = 'Neuron index';
+c = colorbar;
+c.Label.String = '\DeltaW (au)';
+a.FontSize = 18;
+axis square;
+a.Title.String = 'W_{STDP} - W_{naive}';
+figname = 'dWave x Wnaive';
+saveas(f,['~/Desktop/' figname '.svg'])
+
+%% Plot 12 dW*Wn-Wn matrices
+f = figure;
+t = tiledlayout(3,4);
+
+% Plot each dW matrix
+for i = 1:12
+    
+    % load STDP data
+    stdp = D(:,:,i).*Wn-Wn;
+    
+    nexttile
+    a = gca;
+    imagesc(a,1:500,1:500,stdp);
+    axis square
+    title(['\DeltaW_{' num2str(i) '}']);
+    a.XLabel.String = 'Neuron index';
+    a.YLabel.String = 'Neuron index';
+    a.FontSize = 18;
+    c = colorbar;
+%     caxis([0.7 1.3]);
+    c.Label.String = '\DeltaW (au)';
+    
+end
+
+figname = ['12_deltaW_matrices'];
+saveas(f,['~/Desktop/' figname '.svg'])
+
+%% Plot 12 filtered dW*Wn-Wn matrices
+f = figure;
+t = tiledlayout(3,4);
+
+% Plot each dW matrix
+for i = 1:12
+    
+    % load STDP data
+    stdp = F(:,:,i).*Wn-Wn;
+    
+    nexttile
+    a = gca;
+    imagesc(a,1:500,1:500,stdp);
+    axis square
+    title(['\DeltaW_{' num2str(i) '} (filtered)']);
+    a.XLabel.String = 'Neuron index';
+    a.YLabel.String = 'Neuron index';
+    a.FontSize = 18;
+    c = colorbar;
+%     caxis([0.7 1.3]);
+    c.Label.String = '\DeltaW (au)';
+    
+end
+
+figname = ['12_deltaW_matrices_filtered'];
+saveas(f,['~/Desktop/' figname '.svg'])
 
 
+%% Compute nodes/types
+fprintf('Parsing nodes/types...\n')
+fixed_points = @(x) diff(sign(x));
+
+% Pull out fixed points
+C = zeros(100,size(F,2)-1);
+for j = 1:100
+    ch = F(:,:,j).*Wn-Wn;
+    w = nan(51,numel(diag(ch)));
+    for i = 0:50
+        w(i+1,i+2:end)=diag(ch,-(i+1));
+    end
+    C(j,:) = fixed_points(nansum(w));
+end
+C(:,1:50) = 0; % Don't count edges (numerically unstable, presumably)
+C(:,end-49:end) = 0; % Don't count edges 
+type = sum(C>1,2); % Type 1: single node, Type 2: stable node exists
+
+%% Demonstration of types
+% Choose examples to show
+t1 = find(type==1,6,'first');
+t2 = find(type==2,6,'first');
+o = [reshape(t1.',[3,2]) reshape(t2.',[3,2])].';
+o = o(:);
+
+% Plot types
+f = figure;
+t = tiledlayout(3,4);
+
+% Plot each Delta W matrix
+for i = 1:12
+    
+    % load STDP data
+    stdp = F(:,:,o(i)).*Wn-Wn;
+    
+    nexttile
+    a = gca;
+    imagesc(a,1:500,1:500,stdp);
+    axis square
+    if ismember(o(i),t1)
+       title(['\DeltaW_{' num2str(i) '} (Type 1)']); 
+    elseif ismember(o(i),t2)
+       title(['\DeltaW_{' num2str(i) '} (Type 2)']); 
+    end 
+    a.XLabel.String = 'Neuron index';
+    a.YLabel.String = 'Neuron index';
+    a.FontSize = 18;
+    c = colorbar;
+%     caxis([0.7 1.3]);
+    c.Label.String = '\DeltaW (au)';
+    
+end
+
+figname = ['types'];
+saveas(f,['~/Desktop/' figname '.svg'])
+
+%% Decide which type 1 to flip
+flip = zeros(100,1);
+for i = 1:100
+    if type(i)==1 && find(C(i,:))>250
+       flip(i) = -1;
+    elseif type(i) == 2
+        flip(i) = 0;
+    else
+       flip(i) = 1; 
+    end
+    
+end
+
+R = D; RF = F;
+for i = 1:size(F,3)
+    if flip(i)==1 || flip(i)==0
+        continue
+    else
+       R(:,:,i) = rot90(R(:,:,i),2);
+       RF(:,:,i) = rot90(RF(:,:,i),2);
+    end
+    
+end
+
+% Parse out two types of STDP matrix
+dW1 = mean(R(:,:,type==1),3);
+dW2 = mean(R(:,:,type==2),3);
+
+%% Average type matrices
+% Plot types
+f = figure;
+t = tiledlayout(2,2);
+
+for i = 1:2
+   
+    % Choose appropriate type
+    if i == 1
+        stdp = dW1;
+    elseif i == 2
+        stdp = dW2;
+    end
+    
+    nexttile
+    a = gca;
+    imagesc(a,1:500,1:500,Wn.*stdp-Wn);
+    axis square
+    if i == 1
+       title(['Average \DeltaW (Type 1)']); 
+    elseif i == 2
+       title(['Average \DeltaW (Type 2)']); 
+    end 
+    a.XLabel.String = 'Neuron index';
+    a.YLabel.String = 'Neuron index';
+    a.FontSize = 18;
+    c = colorbar;
+%     caxis([0.7 1.3]);
+    c.Label.String = '\DeltaW (au)';
+   
+end
+
+for i = 3:4
+   
+    % Choose appropriate type
+    if i == 3
+        stdp = dW1;
+    elseif i == 4
+        stdp = dW2;
+    end
+    
+    nexttile
+    a = gca;
+    imagesc(a,1:500,1:500,stdp);
+    axis square
+    if i == 3
+        title('Average dW matrix (Type 1)');
+    elseif i == 4
+        title('Average dW matrix (Type 2)');
+    end
+    a.XLabel.String = 'Neuron index';
+    a.YLabel.String = 'Neuron index';
+    a.FontSize = 18;
+    c = colorbar;
+%     caxis([0.7 1.3]);  
+    c.Label.String = 'dW (au)';
+   
+end
+
+figname = ['average_type_matrices'];
+saveas(f,['~/Desktop/' figname '.svg'])
 

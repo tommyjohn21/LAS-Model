@@ -5,7 +5,7 @@
 sbm = simulation_bin_mini;
 
 %% Create average dW matrix
-f = dir('~/Exp6_mini/');
+f = dir('~/Desktop/Exp6_mini/');
 D = [];
 F = [];
 for i = 1:numel(f)
@@ -18,7 +18,7 @@ for i = 1:numel(f)
 end
 
 %% Compute nodes/types
-sprintf('Parsing nodes/types...')
+fprintf('Parsing nodes/types...')
 fixed_points = @(x) diff(sign(x));
 
 % Pull out fixed points
@@ -71,7 +71,7 @@ param = sbm.simulate_mini_model('get_defaults');
 param.stim_location = [0.475 0.525];
 param.threshold_reptitions = 100;
 param.threshold_stimulations = [1:0.05:3];
-param.threshold_savedir = '~/Exp9_mini/Type1';
+param.threshold_savedir = '~/Exp9_mini/Type1/';
 % param.flag_return_voltage_trace = true;
 % param.flag_return_state_trace = true;
 % param.flag_kill_if_seizure = true;
@@ -83,7 +83,7 @@ sbm.find_mini_model_threshold(param)
 
 %% Run type 2 experiment with parameters
 param.dW_matrix = dW2;
-param.threshold_savedir = '~/Exp9_mini/Type2';
+param.threshold_savedir = '~/Exp9_mini/Type2/';
 
 sbm.find_mini_model_threshold(param)
 
