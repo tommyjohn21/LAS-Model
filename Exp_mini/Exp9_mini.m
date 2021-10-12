@@ -4,8 +4,16 @@
 %% Access simulation_bin_mini tools
 sbm = simulation_bin_mini;
 
+%% Local vs. server setings
+vardir = '~/';
+server = strcmp(computer,'GLNXA64'); % if server
+
+if ~server
+    vardir = [vardir 'Desktop/']; % on local, host on desktop
+end
+
 %% Create average dW matrix
-f = dir('~/Desktop/Exp6_mini/');
+f = dir([vardir 'Exp6_mini/']);
 D = [];
 F = [];
 for i = 1:numel(f)
@@ -71,7 +79,7 @@ param = sbm.simulate_mini_model('get_defaults');
 param.stim_location = [0.475 0.525];
 param.threshold_reptitions = 100;
 param.threshold_stimulations = [1:0.05:3];
-param.threshold_savedir = '~/Exp9_mini/Type1/';
+param.threshold_savedir = [vardir 'Exp9_mini/Type1'];
 % param.flag_return_voltage_trace = true;
 % param.flag_return_state_trace = true;
 % param.flag_kill_if_seizure = true;
@@ -83,7 +91,7 @@ sbm.find_mini_model_threshold(param)
 
 %% Run type 2 experiment with parameters
 param.dW_matrix = dW2;
-param.threshold_savedir = '~/Exp9_mini/Type2/';
+param.threshold_savedir = [vardir 'Exp9_mini/Type2'];
 
 sbm.find_mini_model_threshold(param)
 

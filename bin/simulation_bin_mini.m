@@ -124,9 +124,6 @@ p.no_simulations = p.threshold_reptitions; % update how many simulations per sti
             % Update stimulation in a way that can be parsed by parfor
             q = setfield(p,'stim_duration',i);
             
-            % Save to desktop per local
-            q.threshold_savedir = strrep(q.threshold_savedir,'~/','~/Desktop/');
-
             % Function as below
             d = simulate_mini_model(q);
             parsave([q.threshold_savedir 'stim_dur_' num2str(i) '.mat'],d)
