@@ -19,6 +19,7 @@ param.threshold_stimulations = 1.2:0.1:2;
 % Load average dW matrix
 f = dir('~/Desktop/Exp10_mini/');
 D = [];
+F = [];
 for i = 1:numel(f)
     if ~any(strfind(f(i).name,'.mat')) || any(strfind(f(i).name,'Wn')), continue, end
     load([f(i).folder '/' f(i).name])
