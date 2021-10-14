@@ -20,10 +20,12 @@ param.threshold_stimulations = 1.2:0.1:2;
 f = dir('~/Desktop/Exp10_mini/');
 D = [];
 for i = 1:numel(f)
-    if ~any(strfind(f(i).name,'.mat')) || any(strfind(f(i).name,'Wn')), continue, end
-    fprintf(['Loading ' f(i).folder '/' f(i).name '...\n'])
+    if any(strfind(f(i).name,'Wn')), load([f(i).folder '/' f(i).name]), continue, end
+    if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')), continue, end
     load([f(i).folder '/' f(i).name])
-    D = cat(3,D,d.dW);
+    fprintf(['Loading ' f(i).folder '/' f(i).name '...\n'])
+    F = cat(3,F,lowpass(lowpass(d.dW,10/500,'ImpulseResponse','iir').',10/500,'ImpulseResponse','iir').');  
+    D = cat(3,D,d.dW);  
 end
 
 %% Compute nodes/types
