@@ -21,7 +21,8 @@ f = dir('~/Desktop/Exp10_mini/');
 D = [];
 F = [];
 for i = 1:numel(f)
-    if ~any(strfind(f(i).name,'.mat')) || any(strfind(f(i).name,'Wn')), continue, end
+    if any(strfind(f(i).name,'Wn')), load([f(i).folder '/' f(i).name]), continue, end
+    if ~any(strfind(f(i).name,'.mat')), continue, end
     load([f(i).folder '/' f(i).name])
     fprintf(['Loading ' f(i).folder '/' f(i).name '...\n'])
     F = cat(3,F,lowpass(lowpass(d.dW,10/500,'ImpulseResponse','iir').',10/500,'ImpulseResponse','iir').');  
