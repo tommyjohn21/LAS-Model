@@ -2,11 +2,13 @@
 %%% matrices from edge stimulation of mini model (N=100). This script plots
 %%% those results
 
+%%% STDP matrix scripts: Exp3, Exp6, Exp10
+
 %% Load ~10 STDP matrices
-f = dir('~/Desktop/Exp6_mini/');
+f = dir('~/Desktop/Exp10_mini/');
 D = [];
-for i = 1:10
-    if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')), continue, end
+for i = 1:15
+    if ~any(strfind(f(i).name,'.mat')), continue, end    
     load([f(i).folder '/' f(i).name])
     D = [D d];
 end
@@ -58,13 +60,13 @@ figname = ['dW_matrices'];
 saveas(f,['~/Desktop/' figname '.svg'])
 
 %% Load only dW matrices
-f = dir('~/Desktop/Exp6_mini/');
+f = dir('~/Desktop/Exp10_mini/');
 dW = [];
 i = 0; % which file in the directory
 j = 1; % how many files have been loaded
 while j <=15
     i = i+1;
-    if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')), continue, end
+    if ~any(strfind(f(i).name,'.mat')), continue, end
     load([f(i).folder '/' f(i).name])
     dW = cat(3,dW,d.dW);
     j = j+1;
@@ -98,12 +100,12 @@ figname = ['15_dW_matrices'];
 saveas(f,['~/Desktop/' figname '.svg'])
 
 %% Create average dW matrix
-f = dir('~/Desktop/Exp6_mini/');
+f = dir('~/Desktop/Exp10_mini/Scale 3/');
 D = [];
 C = []; % Length of clonic core
 S = []; % Length of seizure
 for i = 1:numel(f)
-    if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')), continue, end
+    if ~any(strfind(f(i).name,'.mat')), continue, end
     load([f(i).folder '/' f(i).name])
     D = cat(3,D,d.dW);
     C = [C sum(d.detector_metrics.states==2)./1000]; % natively written in s (instead of ms)
@@ -195,12 +197,12 @@ figname = ['clonic_vs_seizure'];
 saveas(fig,['~/Desktop/' figname '.svg'])
 
 %% Create average dW matrix
-f = dir('~/Desktop/Exp6_mini/');
+f = dir('~/Desktop/Exp10_mini/');
 D = [];
 F = [];
 for i = 1:numel(f)
     if any(strfind(f(i).name,'Wn')), load([f(i).folder '/' f(i).name]), continue, end
-    if strcmp(f(i).name,'.') || strcmp(f(i).name,'..') || any(strfind(f(i).name,'.DS_Store')) || any(strfind(f(i).name,'.txt')), continue, end
+    if ~any(strfind(f(i).name,'.mat')), continue, end
     load([f(i).folder '/' f(i).name])
     fprintf(['Loading ' f(i).folder '/' f(i).name '...\n'])
     F = cat(3,F,lowpass(lowpass(d.dW,10/500,'ImpulseResponse','iir').',10/500,'ImpulseResponse','iir').');  

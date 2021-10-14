@@ -34,7 +34,7 @@ for i = 1:p.no_simulations
     O = generate_external_input(O,p.stim_location,p.stim_duration);
     
     % Enable STDP
-    O = enable_STDP(O,p.flag_realtime_STDP);
+    O = enable_STDP(O,p);
     
     % Adjust matrix weights post-STDP
     O = adjust_weight_matrix(O,p);
@@ -79,10 +79,7 @@ for i = 1:p.no_simulations
     output(i).seizure = seizure;
     output(i).stim_duration = p.stim_duration;
     output(i).stim_location = p.stim_location;
-    output(i).seizure_threshold = p.seizure_threshold;
-    
-    
-    
+        
     if p.flag_return_voltage_trace
         output(i).V = O.Recorder.Var.V(:,1:O.t);
     end
@@ -107,29 +104,37 @@ if p.flag_get_defaults, p.flag_get_defaults = false; output = p; return, end % r
 p.no_simulations = p.threshold_reptitions; % update how many simulations per stim strength
 
 %%% Conditional parallel computation %%%
-    if strcmp(computer,'GLNXA64') % if server
-        parfor i = 1:numel(p.threshold_stimulations)
-
-            % Update stimulation in way that can be parsed by parfor
-            q = setfield(p,'stim_duration',p.threshold_stimulations(i))
+if p.server % if server
+    parfor i = 1:numel(p.threshold_stimulations)
+        
+        % Update stimulation in way that can be parsed by parfor
+        q = setfield(p,'stim_duration',p.threshold_stimulations(i))
+        
+        if ~exist([q.fullpath(q) 'stim_dur_' num2str(q.stim_duration) '.mat'],'file')   
             
             % Function as below
             d = simulate_mini_model(q);
-            parsave([q.threshold_savedir 'stim_dur_' num2str(q.stim_duration) '.mat'],d)
-
-        end
-    else % local
-        for i = p.threshold_stimulations
-
-            % Update stimulation in a way that can be parsed by parfor
-            q = setfield(p,'stim_duration',i);
+            parsave([q.fullpath(q) 'stim_dur_' num2str(q.stim_duration) '.mat'],d)
             
-            % Function as below
-            d = simulate_mini_model(q);
-            parsave([q.threshold_savedir 'stim_dur_' num2str(i) '.mat'],d)
-
         end
+        
     end
+else % local
+    for i = p.threshold_stimulations
+        
+        % Update stimulation in a way that can be parsed by parfor
+        q = setfield(p,'stim_duration',i);
+        
+        if ~exist([q.fullpath(q) 'stim_dur_' num2str(q.stim_duration) '.mat'],'file')
+            
+            % Function as below
+            d = simulate_mini_model(q);
+            parsave([q.fullpath(q) 'stim_dur_' num2str(i) '.mat'],d)
+            
+        end
+        
+    end
+end
 
 end
 
@@ -149,9 +154,6 @@ function p_out = simulation_settings(p_in)
     addParameter(p_out,'stim_location',[0.475 0.525]) % where on line to stimulate (from 0 to 1)
     addParameter(p_out,'stim_duration',3) % duration of stimulation (s)
     
-    % Detection settings
-    addParameter(p_out,'seizure_threshold',5e3) % arbitrary value for seizure threshold
-    
     % Optional flags
     addParameter(p_out,'flag_realtime_STDP',false) % Perform real time STDP
     addParameter(p_out,'flag_kill_if_seizure',true) % Kill simulation early if seizure detected
@@ -163,10 +165,18 @@ function p_out = simulation_settings(p_in)
     % Seizure threshold settings
     addParameter(p_out,'threshold_stimulations',[0:0.05:2]) % Stimulation durations to use for threshold detection
     addParameter(p_out,'threshold_reptitions',40) % Number of repititions at each stimulation duration for threshold detection
-    addParameter(p_out,'threshold_savedir','~/threshold_mini/') % Default save directory for threshold detection
     
     % Adjust weight matrix with custom weight matrix
     addParameter(p_out,'dW_matrix',[]) % if non-empty, W_updated = W_naive.*dW_matrix
+    
+    % STDP strength
+    addParameter(p_out,'STDP_scale',1) % scale the strength of STDP
+    
+    % File settings
+    addParameter(p_out,'server',isserver) % Decide if on server
+    addParameter(p_out,'vardir',vardir) % Adjust vardir pending server
+    addParameter(p_out,'expdir',expdir) % Adjust expdir pending Exp
+    addParameter(p_out,'fullpath',@fullpath) % recall full file path
     
     %%% Parse input and return
     if strcmp(p_in,'get_defaults') || strcmp(p_in,'use_defaults')
@@ -208,14 +218,18 @@ O.Ext.Deterministic = @(x,t) ((stim_x(2)*O.n(1))>x(:,1) & x(:,1)>(stim_x(1)*O.n(
 end
 
 %% Enable STDP
-function O = enable_STDP(O, STDP_flag)
+function O = enable_STDP(O, p)
 
 % Change STDP flags if deisred
-if STDP_flag
+if p.flag_realtime_STDP
     O.Proj.In(1).STDP.Enabled = 1;
     KernelToMultiplication(O.Proj.In(1));
     O.Proj.In(1).STDP.tau_LTD = O.Proj.In(1).STDP.tau_LTD./O.param.time_compression;
     O.Proj.In(1).STDP.tau_LTP = O.Proj.In(1).STDP.tau_LTP./O.param.time_compression;
+    
+    % Scale STDP strength (default is 1)
+    O.Proj.In(1).STDP.dLTD = O.Proj.In(1).STDP.dLTD.*p.STDP_scale;
+    O.Proj.In(1).STDP.dLTP = O.Proj.In(1).STDP.dLTP.*p.STDP_scale;
 end
 
 end
@@ -239,39 +253,31 @@ function parsave(fname,d)
  save(fname, 'd', '-v7.3')
 end
 
-%% Detector
-function [seizure,dP,fdP] = detector(O,p)
-%DETECTOR is a simple device to detect model seizures in Neural network O
-%   INPUTS
-%       O:  Neural network with voltages stored in O.Recorder.Var.V
-%       dt: sampling length (ms)
+%% File Handling - utility suite to handle save directories
+% Isserver
+function server = isserver()
+    server = strcmp(computer,'GLNXA64'); % if server
+end
 
-%% Power in first derivative
-% Extract voltage traces from window start up to current timestep
-V = O.Recorder.Var.V(:,1:O.t);
+% Vardir - directory where variables are saved
+function str = vardir()
+    if isserver
+       str = '~/';
+    else
+        str = '~/Desktop/';
+    end
+end
 
-% Numerically compute signal power in first derivative, sum across neurons
-dP = diff(V,1,2).^2;
-dP = sum(dP,1);
+% Expdir - directory for this particular experiment
+function str = expdir()
+    st = dbstack;
+    str = {st.name};
+    str = [str{end} '/'];
+end
 
-%% Low pass filter
-fs = 1000*(1./p.dt); % Compute sampling frequency (Hz)
-[b,a] = butter(1,(1./fs/2)); % First order, low-pass butterworth filter
-fdP = filtfilt(b,a,dP); % Filtered power
-
-%% Arbitrary cutoff
-% Seizure threshold
-% Note: we will set the seizure threshold very high, as we care more about
-% detecting (binary) vs. not (as opposed to on-the-fly detection where
-% timing matters)
-% thr = 1e4; % Arbitrary threshold (central stimulation)
-thr = p.seizure_threshold; % Arbitrary threshold (edge stimulation)
-seizure = any(fdP>thr);
-
-% Format output
-detector_metrics.dP = dP;
-detector_metrics.fdP = fdP;
-
+% Fullpath - path to actual save directory
+function str = fullpath(p)
+    str = [p.vardir p.expdir];
 end
 
 %% Wavelet detector
