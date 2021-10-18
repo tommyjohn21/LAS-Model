@@ -5,7 +5,7 @@
 %%% STDP matrix scripts: Exp3, Exp6, Exp10
 
 %% Load ~10 STDP matrices
-f = dir('~/Desktop/Exp10_mini/');
+f = dir('~/Desktop/Exp14_mini/');
 D = [];
 for i = 1:15
     if ~any(strfind(f(i).name,'.mat')), continue, end    
@@ -60,7 +60,7 @@ figname = ['dW_matrices'];
 saveas(f,['~/Desktop/' figname '.svg'])
 
 %% Load only dW matrices
-f = dir('~/Desktop/Exp10_mini/');
+f = dir('~/Desktop/Exp14_mini/');
 dW = [];
 i = 0; % which file in the directory
 j = 1; % how many files have been loaded
@@ -100,7 +100,7 @@ figname = ['15_dW_matrices'];
 saveas(f,['~/Desktop/' figname '.svg'])
 
 %% Create average dW matrix
-f = dir('~/Desktop/Exp10_mini/Scale 3/');
+f = dir('~/Desktop/Exp14_mini/');
 D = [];
 C = []; % Length of clonic core
 S = []; % Length of seizure
@@ -197,7 +197,7 @@ figname = ['clonic_vs_seizure'];
 saveas(fig,['~/Desktop/' figname '.svg'])
 
 %% Create average dW matrix
-f = dir('~/Desktop/Exp10_mini/');
+f = dir('~/Desktop/Exp14_mini/');
 D = [];
 F = [];
 for i = 1:numel(f)

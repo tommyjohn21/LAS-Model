@@ -104,7 +104,7 @@ if p.flag_get_defaults, p.flag_get_defaults = false; output = p; return, end % r
 p.no_simulations = p.threshold_reptitions; % update how many simulations per stim strength
 
 %%% Conditional parallel computation %%%
-if p.server % if server
+if p.server || p.flag_use_parallel % if server or if forced to use parallel
     parfor i = 1:numel(p.threshold_stimulations)
         
         % Update stimulation in way that can be parsed by parfor
@@ -161,6 +161,7 @@ function p_out = simulation_settings(p_in)
     addParameter(p_out,'flag_return_voltage_trace',false) % Return voltage trace if desired
     addParameter(p_out,'flag_return_state_trace',false) % Return state trace if desired
     addParameter(p_out,'flag_get_defaults',false) % Return voltage trace if desired
+    addParameter(p_out,'flag_use_parallel',false) % Force usage of parfor loop
         
     % Seizure threshold settings
     addParameter(p_out,'threshold_stimulations',[0:0.05:2]) % Stimulation durations to use for threshold detection
