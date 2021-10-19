@@ -241,7 +241,9 @@ function O = adjust_weight_matrix(O, p)
 %%% Default p.dW_matrix is empty; update weights if non-empty
 if ~isempty(p.dW_matrix)
     % Change to sparse matrix notation instead of convolution
-    KernelToMultiplication(O.Proj.In(1));
+    if ~strcmp(O.Proj.In(1).Method,'multiplication')
+        KernelToMultiplication(O.Proj.In(1));
+    end
     % Update weight matrix
     O.Proj.In(1).W = O.Proj.In(1).W.*p.dW_matrix;
 end
