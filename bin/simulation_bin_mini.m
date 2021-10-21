@@ -22,16 +22,25 @@ function output = simulate_mini_model(p)
 p = simulation_settings(p);
 if p.flag_get_defaults, p.flag_get_defaults = false; output = p; return, end % return output, kill script
 
+% Dynamic field names for simulations (deterministic or not)
+if p.flag_deterministic
+    sims = 'threshold_stimulations';
+    stim = 'stim_duration';
+else
+    sims = 'threshold_sigmas';
+    stim = 'stim_sigma';
+end
+
 for i = 1:p.no_simulations
     
-    disp(['Stim dur ' num2str(p.stim_duration) 's, sim ' num2str(i) ' of ' num2str(p.no_simulations)])
+    disp(['Stim ' num2str(p.(stim)) ', sim ' num2str(i) ' of ' num2str(p.no_simulations)])
     
     %%% Preliminaries
     % Generate mini model
-    O = generate_mini_network;
+    O = generate_mini_network(p);
     
     % Generate external input
-    O = generate_external_input(O,p.stim_location,p.stim_duration);
+    O = generate_external_input(O,p.stim_location,p.stim_duration,p);
     
     % Enable STDP
     O = enable_STDP(O,p);
@@ -60,7 +69,7 @@ for i = 1:p.no_simulations
         Update(O,dt);
         
         % Detect seizures
-        if mod(O.t,5000)==0 && O.t>((2+p.stim_duration+0.5)*1000) % no need to look until end of stim
+        if mod(O.t,5000)==0 && (~p.flag_deterministic || (p.flag_deterministic && O.t>((2+p.stim_duration+0.5)*1000))) % no need to look until end of stim
             [seizure,detector_metrics] = wavelet_detector(O,p);
             if p.flag_kill_if_seizure
                 if seizure, break, end
@@ -89,7 +98,7 @@ for i = 1:p.no_simulations
     end
     
     %%% Clear workspace
-    clearvars('-except','output','p')
+    clearvars('-except','output','p','stim','sims')
     
 end
 
@@ -103,29 +112,38 @@ p = simulation_settings(p);
 if p.flag_get_defaults, p.flag_get_defaults = false; output = p; return, end % return output, kill script
 p.no_simulations = p.threshold_reptitions; % update how many simulations per stim strength
 
+% Dynamic field names for simulations (deterministic or not)
+if p.flag_deterministic
+    sims = 'threshold_stimulations';
+    stim = 'stim_duration';
+else
+    sims = 'threshold_sigmas';
+    stim = 'stim_sigma';
+end
+
 %%% Conditional parallel computation %%%
 if p.server || p.flag_use_parallel % if server or if forced to use parallel
-    parfor i = 1:numel(p.threshold_stimulations)
+    parfor i = 1:numel(p.(stims))
         
         % Update stimulation in way that can be parsed by parfor
-        q = setfield(p,'stim_duration',p.threshold_stimulations(i))
+        q = setfield(p,stim,p.(sims)(i))
         
-        if ~exist([q.fullpath(q) 'stim_dur_' num2str(q.stim_duration) '.mat'],'file')   
+        if ~exist([q.fullpath(q) 'stim_dur_' num2str(q.(stim)) '.mat'],'file')   
             
             % Function as below
             d = simulate_mini_model(q);
-            parsave([q.fullpath(q) 'stim_dur_' num2str(q.stim_duration) '.mat'],d)
+            parsave([q.fullpath(q) 'stim_dur_' num2str(q.(stim)) '.mat'],d)
             
         end
         
     end
 else % local
-    for i = p.threshold_stimulations
+    for i = p.(sims)
         
         % Update stimulation in a way that can be parsed by parfor
-        q = setfield(p,'stim_duration',i);
+        q = setfield(p,stim,i);
         
-        if ~exist([q.fullpath(q) 'stim_dur_' num2str(q.stim_duration) '.mat'],'file')
+        if ~exist([q.fullpath(q) 'stim_dur_' num2str(q.(stim)) '.mat'],'file')
             
             % Function as below
             d = simulate_mini_model(q);
@@ -149,10 +167,15 @@ function p_out = simulation_settings(p_in)
     addParameter(p_out,'no_simulations',1) % number of simulations performed
     addParameter(p_out,'simulation_duration',25000) % number of time-steps simulated
     addParameter(p_out,'dt',1) % number of ms per time step (ms)
-
+    addParameter(p_out,'g_K_max',40) % number of ms per time step (ms)
+    addParameter(p_out,'beta_param',2.5) % number of ms per time step (ms)
+    
     % STIMulation settings
+    addParameter(p_out,'flag_deterministic',true) % use deterministric stimulation
+    addParameter(p_out,'flag_add_noise',false) % noise stimulation if desired
     addParameter(p_out,'stim_location',[0.475 0.525]) % where on line to stimulate (from 0 to 1)
     addParameter(p_out,'stim_duration',3) % duration of stimulation (s)
+    addParameter(p_out,'stim_sigma',20) % sigma of non-deterministic stimulation
     
     % Optional flags
     addParameter(p_out,'flag_realtime_STDP',false) % Perform real time STDP
@@ -162,16 +185,18 @@ function p_out = simulation_settings(p_in)
     addParameter(p_out,'flag_return_state_trace',false) % Return state trace if desired
     addParameter(p_out,'flag_get_defaults',false) % Return voltage trace if desired
     addParameter(p_out,'flag_use_parallel',false) % Force usage of parfor loop
-        
+            
     % Seizure threshold settings
     addParameter(p_out,'threshold_stimulations',[0:0.05:2]) % Stimulation durations to use for threshold detection
+    addParameter(p_out,'threshold_sigmas',[5:5:20]) % Stimulation sigmas to use for threshold detection
     addParameter(p_out,'threshold_reptitions',40) % Number of repititions at each stimulation duration for threshold detection
-    
-    % Adjust weight matrix with custom weight matrix
-    addParameter(p_out,'dW_matrix',[]) % if non-empty, W_updated = W_naive.*dW_matrix
     
     % STDP strength
     addParameter(p_out,'STDP_scale',1) % scale the strength of STDP
+    
+    % Network settings
+    addParameter(p_out,'dilate',2) % dilate sigma_E/sigma_I
+    addParameter(p_out,'dW_matrix',[]) % if non-empty, W_updated = W_naive.*dW_matrix
     
     % File settings
     addParameter(p_out,'server',isserver) % Decide if on server
@@ -198,24 +223,42 @@ function p_out = simulation_settings(p_in)
 end
 
 %% Generate mini network
-function [O, P_E, P_I1, P_I2] = generate_mini_network
+function [O, P_E, P_I1, P_I2] = generate_mini_network(p)
 % Lay out the field
 O = SpikingModel('Exp5Template_mini');
+
+% Parameter adjustment
+O.param.g_K_max = gen_param(p.g_K_max,0,O.n,1); 
+O.param.beta = gen_param(p.beta_param,0,O.n,1); % mV, high beta = low threshold noise
+O.param.f = @(u) O.param.f0+O.param.fs.*exp(u./O.param.beta); % unit: kHz
+
 % Build recurrent connection
-[ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_mini( O );
+[ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_mini( O , 'dilate' , p.dilate);
 end
 
 %% Generate external input
-function O = generate_external_input(O,stim_location,stim_duration)
-% External input
-Ic = 200;
-stim_x = stim_location;
-stim_t = [2 2+stim_duration]; % Unit: second
+function O = generate_external_input(O,stim_location,stim_duration,p)
+
+% Basic external input functions
 O.Ext = ExternalInput;
 O.Ext.Target = O;
-O.Ext.Deterministic = @(x,t) ((stim_x(2)*O.n(1))>x(:,1) & x(:,1)>(stim_x(1)*O.n(1))) .* ...
-    ((stim_t(2)*1000)> t & t > (stim_t(1)*1000)) .* ...
-    Ic; % x: position, t: ms, current unit: pA
+
+% Deterministic external input
+if p.flag_deterministic
+    Ic = 200;
+    stim_x = stim_location;
+    stim_t = [2 2+stim_duration]; % Unit: second
+    O.Ext.Deterministic = @(x,t) ((stim_x(2)*O.n(1))>x(:,1) & x(:,1)>(stim_x(1)*O.n(1))) .* ...
+        ((stim_t(2)*1000)> t & t > (stim_t(1)*1000)) .* ...
+        Ic; % x: position, t: ms, current unit: pA
+end
+
+if p.flag_add_noise
+    O.Ext.Random.sigma = p.stim_sigma; % unit: pA
+    O.Ext.Random.tau_x = 200./O.param.space_compression; % spatial constant unit: neuron index
+    O.Ext.Random.tau_t = 15./O.param.time_compression; % time unit: ms
+end
+
 end
 
 %% Enable STDP

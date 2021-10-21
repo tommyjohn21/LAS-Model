@@ -1,4 +1,4 @@
-function [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_flex( O, varargin )
+function [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_mini( O, varargin )
 % [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection( O, varargin )
 %
 % This is for building standard recurrent connection.  
@@ -22,8 +22,10 @@ function [ P_E, P_I1, P_I2 ] = StandardRecurrentConnection_flex( O, varargin )
 % Jyun-you Liou, 2017/04/30
 p = inputParser;
 addParameter(p,'Adjust',false);
+addParameter(p,'dilate',2);
 parse(p,varargin{:});
 Adj = p.Results.Adjust;
+dilate = p.Results.dilate;
 
 % Conductances
 synaptic_excitation = 100;
@@ -32,14 +34,14 @@ global_inhibition = 50;
 
 % Build recurrent excitation & configure it
 P_E = Projection(O,O,'Type','E','Topology','linear');
-Sigma_E = diag(O.n) * 0.04; % percentage of the field 
+Sigma_E = diag(O.n) * 0.02 * dilate; % percentage of the field 
 Kernelize(P_E, @(x) mvnpdf(x,[0 0],Sigma_E.^2), 'KerSize', ceil(2.5*diag(Sigma_E)));
 if Adj;AdjustWeight(P_E);end % Adjust strength at space border; 
 P_E.WPost = P_E.WPost * synaptic_excitation; % Projection strength 
 
 % Build recurrent inhibition & configure it
 P_I1 = Projection(O,O,'Type','I','Topology','linear');
-Sigma_I = diag(O.n) * 0.06; % percentage of the field  
+Sigma_I = diag(O.n) * 0.03 * dilate; % percentage of the field  
 Kernelize(P_I1, @(x) mvnpdf(x,[0 0],Sigma_I.^2), 'KerSize', ceil(2.5*diag(Sigma_I)));
 if Adj;AdjustWeight(P_I1);end % Adjust strength at space border; 
 P_I1.WPost = P_I1.WPost * synaptic_inhibition; % Projection strength
