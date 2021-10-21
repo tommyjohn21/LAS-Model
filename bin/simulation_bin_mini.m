@@ -123,7 +123,7 @@ end
 
 %%% Conditional parallel computation %%%
 if p.server || p.flag_use_parallel % if server or if forced to use parallel
-    parfor i = 1:numel(p.(stims))
+    parfor i = 1:numel(p.(sims))
         
         % Update stimulation in way that can be parsed by parfor
         q = setfield(p,stim,p.(sims)(i))
