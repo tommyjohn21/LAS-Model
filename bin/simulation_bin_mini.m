@@ -373,6 +373,11 @@ clonic = z(clonic,clonic_baseline_mean,clonic_baseline_std);
 cutoff_tonic = 30; % in SD
 cutoff_clonic = 20;
 
+if ~p.flag_deterministic
+    cutoff_tonic = 10;
+    cutoff_clonic = 10;
+end
+
 % Embedded code to see scoring
 [~,order] = sort([setdiff(1:prod(O.n),st_neu),st_neu]);
 state_trace = (tonic>cutoff_tonic)+2*(clonic>cutoff_clonic);
