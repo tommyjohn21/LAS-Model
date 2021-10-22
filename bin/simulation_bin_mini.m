@@ -61,6 +61,7 @@ for i = 1:p.no_simulations
             % Run final seizure detection at end of run if no seizure
             % detected prior
             [seizure,detector_metrics] = wavelet_detector(O,p);
+            if ~seizure, keyboard, end
             disp(['t = ' num2str(O.t/1000) 's, end'])
             break
         end
@@ -334,29 +335,31 @@ st_neu = find(1:prod(O.n)>prod(O.n).*p.stim_location(1) & 1:prod(O.n)<prod(O.n).
 
 % Extract voltage traces from neighbors
 % V = O.Recorder.Var.V(neighbors,1:O.t);
-V = O.Recorder.Var.V(setdiff(1:prod(O.n),st_neu),1:O.t);
+V = O.Recorder.Var.V(:,1:O.t);
 
 % Extract g_K and Cl_in from all non-stimulated neurons
-g_K = O.Recorder.Var.g_K(setdiff(1:prod(O.n),st_neu),1:O.t);
-Cl_in = O.Recorder.Var.Cl_in(setdiff(1:prod(O.n),st_neu),1:O.t);
+% g_K = O.Recorder.Var.g_K(setdiff(1:prod(O.n),st_neu),1:O.t);
+% Cl_in = O.Recorder.Var.Cl_in(setdiff(1:prod(O.n),st_neu),1:O.t);
 
 % Kernel for Gaussian convoluation
 g = normpdf(-4:6/1000:4,0,1); % gaussian for filtering
 g = g./sum(g); % normalize AUC
 
 % Compute tonic wavefront
-tonic = zscore(Cl_in,[],'all') - zscore(g_K,[],'all');
-tonic = imgaussfilt(tonic,10); % Gaussian blur for smoothing
-tonic_baseline = tonic(:,1:2000);
-tonic_baseline_mean = mean(tonic_baseline(:));
-tonic_baseline_std = std(tonic_baseline(:));
-z = @(x,m,sd) (x-m)./sd;
-tonic = z(tonic,tonic_baseline_mean,tonic_baseline_std);
+% tonic = zscore(Cl_in,[],'all') - zscore(g_K,[],'all');
+% tonic = imgaussfilt(tonic,10); % Gaussian blur for smoothing
+% tonic_baseline = tonic(:,1:2000);
+% tonic_baseline_mean = mean(tonic_baseline(:));
+% tonic_baseline_std = std(tonic_baseline(:));
+% z = @(x,m,sd) (x-m)./sd;
+% tonic = z(tonic,tonic_baseline_mean,tonic_baseline_std);
+tonic = lowpass(V.',0.125,1000,'ImpulseResponse','iir').';
 
 % Time course of alpha power
+W = abs(hilbert(bandpass(V.',[175 325],1000./p.dt,'ImpulseResponse','iir'))).';
 a = [];
 for n = 1:size(V,1)
-   [wt,f] = cwt(V(n,:),1000./p.dt); 
+   [wt,f] = cwt(W(n,:),1000./p.dt); 
    a = [a; abs(mean(wt(f>5&f<15,:),1))];
    % s = zscore(real(wt(f>300,:)),[],2)>1; % spike train
    % fr = [fr; mean(cell2mat(cellfun(@(ss)conv(ss,g,'same'),num2cell(s,2),'UniformOutput',false)))]; % firing rate
@@ -364,18 +367,21 @@ end
 
 % Find clonic core
 clonic = conv2(lowpass(a,0.05),g,'same');
-clonic_baseline = clonic(:,1:2000);
-clonic_baseline_mean = mean(clonic_baseline(:));
-clonic_baseline_std = std(clonic_baseline(:));
-clonic = z(clonic,clonic_baseline_mean,clonic_baseline_std);
+% clonic_baseline = clonic(:,1:2000);
+% clonic_baseline_mean = mean(clonic_baseline(:));
+% clonic_baseline_std = std(clonic_baseline(:));
+% clonic = z(clonic,clonic_baseline_mean,clonic_baseline_std);
 
 % Cutoff to define tonic/clonic
-cutoff_tonic = 30; % in SD
-cutoff_clonic = 20;
+% cutoff_tonic = 30; % in SD
+% cutoff_clonic = 20;
 
 if ~p.flag_deterministic
-    cutoff_tonic = 10;
-    cutoff_clonic = 10;
+    cutoff_tonic = -40;
+    cutoff_clonic = 1;
+else
+    keyboard
+    % you have not run new detector through deterministic case
 end
 
 % Embedded code to see scoring
@@ -393,13 +399,20 @@ states = d_tonic + d_clonic; % 0 is null state, 1 is tonic wave, 2 is both tonic
 no_unexpected_states = all(ismember(states,0:2)); % Make sure all states in state vector are in 0:2
 all_states = ((all(ismember(0:2,states)))); % Make sure all states are included
 first_two_transitions = find(diff(states)~=0,2,'first');
+state_changes = find(diff(states)~=0);
+transitions = [states(state_changes); states(state_changes+1)];
+baseline2tonic = find(all(transitions == 1 | transitions ==0));
+tonic2clonic = find(all(transitions == 1 | transitions ==2));
 
 % Ensure correct ordering of first two transitions
 correct_order = 0; % automatic failure if no more than one transition detected
 if numel(first_two_transitions) == 2
-    correct_order = all(states(1:first_two_transitions(1))==0) & ...
-        all(states(first_two_transitions(1)+1:first_two_transitions(2))==1) & ...
-        states(first_two_transitions(2)+1) == 2;
+%     correct_order = all(states(1:first_two_transitions(1))==0) & ...
+%         all(states(first_two_transitions(1)+1:first_two_transitions(2))==1) & ...
+%         states(first_two_transitions(2)+1) == 2;
+    correct_order = all(states(1:state_changes(baseline2tonic(1)))==0) & ...
+        ~isempty(tonic2clonic) & ...
+        all(tonic2clonic>baseline2tonic(1));
 end
 
 % Ensure coexistence of states
