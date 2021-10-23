@@ -61,7 +61,6 @@ for i = 1:p.no_simulations
             % Run final seizure detection at end of run if no seizure
             % detected prior
             [seizure,detector_metrics] = wavelet_detector(O,p);
-            if ~seizure, keyboard, end
             disp(['t = ' num2str(O.t/1000) 's, end'])
             break
         end
@@ -330,51 +329,26 @@ end
 %% Wavelet detector
 function [seizure,detector_metrics] = wavelet_detector(O,p)
 
-% Stimulated neurons (sn)
-st_neu = find(1:prod(O.n)>prod(O.n).*p.stim_location(1) & 1:prod(O.n)<prod(O.n).*p.stim_location(2));
-
-% Extract voltage traces from neighbors
-% V = O.Recorder.Var.V(neighbors,1:O.t);
+% Extract voltage traces
 V = O.Recorder.Var.V(:,1:O.t);
-
-% Extract g_K and Cl_in from all non-stimulated neurons
-% g_K = O.Recorder.Var.g_K(setdiff(1:prod(O.n),st_neu),1:O.t);
-% Cl_in = O.Recorder.Var.Cl_in(setdiff(1:prod(O.n),st_neu),1:O.t);
 
 % Kernel for Gaussian convoluation
 g = normpdf(-4:6/1000:4,0,1); % gaussian for filtering
 g = g./sum(g); % normalize AUC
 
 % Compute tonic wavefront
-% tonic = zscore(Cl_in,[],'all') - zscore(g_K,[],'all');
-% tonic = imgaussfilt(tonic,10); % Gaussian blur for smoothing
-% tonic_baseline = tonic(:,1:2000);
-% tonic_baseline_mean = mean(tonic_baseline(:));
-% tonic_baseline_std = std(tonic_baseline(:));
-% z = @(x,m,sd) (x-m)./sd;
-% tonic = z(tonic,tonic_baseline_mean,tonic_baseline_std);
 tonic = lowpass(V.',0.125,1000,'ImpulseResponse','iir').';
 
-% Time course of alpha power
+% Compute alpha content of gamma envelope
 W = abs(hilbert(bandpass(V.',[175 325],1000./p.dt,'ImpulseResponse','iir'))).';
 a = [];
 for n = 1:size(V,1)
    [wt,f] = cwt(W(n,:),1000./p.dt); 
    a = [a; abs(mean(wt(f>5&f<15,:),1))];
-   % s = zscore(real(wt(f>300,:)),[],2)>1; % spike train
-   % fr = [fr; mean(cell2mat(cellfun(@(ss)conv(ss,g,'same'),num2cell(s,2),'UniformOutput',false)))]; % firing rate
 end
 
 % Find clonic core
 clonic = conv2(lowpass(a,0.05),g,'same');
-% clonic_baseline = clonic(:,1:2000);
-% clonic_baseline_mean = mean(clonic_baseline(:));
-% clonic_baseline_std = std(clonic_baseline(:));
-% clonic = z(clonic,clonic_baseline_mean,clonic_baseline_std);
-
-% Cutoff to define tonic/clonic
-% cutoff_tonic = 30; % in SD
-% cutoff_clonic = 20;
 
 if ~p.flag_deterministic
     cutoff_tonic = -40;
@@ -385,10 +359,7 @@ else
 end
 
 % Embedded code to see scoring
-[~,order] = sort([setdiff(1:prod(O.n),st_neu),st_neu]);
 state_trace = (tonic>cutoff_tonic)+2*(clonic>cutoff_clonic);
-state_trace = [state_trace; zeros(numel(st_neu),size(V,2))]; % Add stimulated neurons for visualization
-state_trace = state_trace(order,:); % reorder with placeholders for st_neu
 
 % Actual seizure detection
 d_tonic = sum(tonic>cutoff_tonic)>1;
