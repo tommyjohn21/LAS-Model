@@ -5,7 +5,7 @@
 %%% STDP matrix scripts: Exp3, Exp6, Exp10
 
 %% Load ~10 STDP matrices
-f = dir('~/Desktop/Exp22_mini/');
+f = dir('~/Desktop/Exp24_mini/');
 D = [];
 for i = 1:15
     if ~any(strfind(f(i).name,'.mat')), continue, end    
@@ -60,7 +60,7 @@ figname = ['dW_matrices'];
 saveas(f,['~/Desktop/' figname '.svg'])
 
 %% Load only dW matrices
-f = dir('~/Desktop/Exp22_mini/');
+f = dir('~/Desktop/Exp24_mini/');
 dW = [];
 i = 0; % which file in the directory
 j = 1; % how many files have been loaded
@@ -100,7 +100,7 @@ figname = ['15_dW_matrices'];
 saveas(f,['~/Desktop/' figname '.svg'])
 
 %% Create average dW matrix
-f = dir('~/Desktop/Exp21_mini/');
+f = dir('~/Desktop/Exp24_mini/');
 D = [];
 C = []; % Length of clonic core
 S = []; % Length of seizure
@@ -197,7 +197,7 @@ figname = ['clonic_vs_seizure'];
 saveas(fig,['~/Desktop/' figname '.svg'])
 
 %% Create average dW matrix
-f = dir('~/Desktop/Exp21_mini/');
+f = dir('~/Desktop/Exp24_mini/');
 D = [];
 F = [];
 for i = 1:numel(f)
@@ -294,8 +294,8 @@ for j = 1:100
     end
     C(j,:) = fixed_points(nansum(w));
 end
-C(:,1:50) = 0; % Don't count edges (numerically unstable, presumably)
-C(:,end-49:end) = 0; % Don't count edges 
+C(:,1:115) = 0; % Don't count edges (numerically unstable, presumably)
+C(:,end-114:end) = 0; % Don't count edges 
 type = sum(C>1,2); % Type 1: single node, Type 2: stable node exists
 
 %% Demonstration of types
