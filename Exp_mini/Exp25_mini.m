@@ -25,6 +25,8 @@ param.g_K_max = 50; % number of ms per time step (ms)
 param.beta_param = 1.5; % number of ms per time step (ms)
 param.flag_add_noise = true;
 param.dilate = 1;
+param.flag_renormalize_dW_matrix = true;
+
 
 %% Create and set average dW matrix
 % Load average dW matrix

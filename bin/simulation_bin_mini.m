@@ -186,6 +186,7 @@ function p_out = simulation_settings(p_in)
     addParameter(p_out,'flag_return_state_trace',false) % Return state trace if desired
     addParameter(p_out,'flag_get_defaults',false) % Return voltage trace if desired
     addParameter(p_out,'flag_use_parallel',false) % Force usage of parfor loop
+    addParameter(p_out,'flag_renormalize_dW_matrix',false) % Renormalize dW matrix after application
             
     % Seizure threshold settings
     addParameter(p_out,'threshold_stimulations',[0:0.05:2]) % Stimulation durations to use for threshold detection
@@ -288,8 +289,18 @@ if ~isempty(p.dW_matrix)
     if ~strcmp(O.Proj.In(1).Method,'multiplication')
         KernelToMultiplication(O.Proj.In(1));
     end
+    
+    % Capture total output energy (for renormalization)
+    output = sum(O.Proj.In(1).W);
+    
     % Update weight matrix
     O.Proj.In(1).W = O.Proj.In(1).W.*p.dW_matrix;
+    
+    % Renomalize dW matrix if desired
+    if p.flag_renormalize_dW_matrix
+        O.Proj.In(1).W = O.Proj.In(1).W./sum(O.Proj.In(1).W).*output;
+    end
+    
 end
 
 end

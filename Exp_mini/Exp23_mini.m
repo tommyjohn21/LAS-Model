@@ -8,7 +8,6 @@ sbm = simulation_bin_mini;
 param = sbm.simulate_mini_model('get_defaults');
 
 % Adjust params
-% param.stim_location = [0.475 0.525];
 param.threshold_reptitions = 100;
 param.threshold_stimulations = 0;
 param.threshold_sigmas = [5:5:10 15:2.5:35 40];
