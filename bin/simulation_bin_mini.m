@@ -61,6 +61,7 @@ for i = 1:p.no_simulations
             % Run final seizure detection at end of run if no seizure
             % detected prior
             [seizure,detector_metrics] = wavelet_detector(O,p);
+            if ~seizure, keyboard, end
             disp(['t = ' num2str(O.t/1000) 's, end'])
             break
         end
@@ -364,30 +365,15 @@ state_trace = (tonic>cutoff_tonic)+2*(clonic>cutoff_clonic);
 % Actual seizure detection
 d_tonic = sum(tonic>cutoff_tonic)>1;
 d_clonic = sum(clonic>cutoff_clonic)>1;
-states = d_tonic + d_clonic; % 0 is null state, 1 is tonic wave, 2 is both tonic and clonic
+states = [d_tonic; d_clonic]; % [0;0] is null state, [1;0] is tonic wave, [0;1] is clonic core, [1;1] is both 
 
-% Find state transitions
-no_unexpected_states = all(ismember(states,0:2)); % Make sure all states in state vector are in 0:2
-all_states = ((all(ismember(0:2,states)))); % Make sure all states are included
-first_two_transitions = find(diff(states)~=0,2,'first');
-state_changes = find(diff(states)~=0);
-transitions = [states(state_changes); states(state_changes+1)];
-baseline2tonic = find(all(transitions == 1 | transitions ==0));
-tonic2clonic = find(all(transitions == 1 | transitions ==2));
+% Ensure that both tonic and clonic are detected
+all_states = any(states(1,:)) && any(states(2,:)); % Make sure at least some tonic AND clonic
 
-% Ensure correct ordering of first two transitions
-correct_order = 0; % automatic failure if no more than one transition detected
-if numel(first_two_transitions) == 2
-%     correct_order = all(states(1:first_two_transitions(1))==0) & ...
-%         all(states(first_two_transitions(1)+1:first_two_transitions(2))==1) & ...
-%         states(first_two_transitions(2)+1) == 2;
-    correct_order = all(states(1:state_changes(baseline2tonic(1)))==0) & ...
-        ~isempty(tonic2clonic) & ...
-        all(tonic2clonic>baseline2tonic(1));
-end
-
-% Ensure coexistence of states
-coexistence = any(states == 2);
+% Ensure that clonic activity follows at least some point of isolated tonic
+% activity
+start_of_tonic = find(d_tonic & ~d_clonic,1,'first'); % Find beginning of tonic wavefront (without clonic)
+correct_order = any(sum(states(2,start_of_tonic:end))); % Make sure that clonic activity is found at some point after isolated tonic wave
 
 % Ensure clonic phase lasts for at least some duration of time
 clonic_duration = 0.3e3; % 1e3 for at least one second of clonic activity
@@ -395,14 +381,14 @@ appropriate_clonic_duration = sum(d_clonic)>clonic_duration;
 
 % Detect seizure
 seizure = 0; % Default
-if all_states && no_unexpected_states && correct_order && ...
-        coexistence && appropriate_clonic_duration
+if all_states && correct_order && ...
+        appropriate_clonic_duration
     seizure = 1;
 end
 
 % Port up metrics
 detector_metrics.states = states;
-detector_metrics.wave_collapsed = sum(states>0)>0 & all(states(end-100:end)==0);
+detector_metrics.wave_collapsed = sum(states(:))>0 & all(states(1,end-100:end)==0);
 
 if p.flag_return_state_trace
    detector_metrics.state_trace = state_trace; 
