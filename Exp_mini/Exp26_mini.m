@@ -26,6 +26,7 @@ param.g_K_max = 50; % number of ms per time step (ms)
 param.beta_param = 1.5; % number of ms per time step (ms)
 param.flag_add_noise = true;
 param.dilate = 1;
+param.flag_renormalize_dW_matrix = true;
 
 %% Create and set average dW matrix
 % Load average dW matrix
@@ -36,7 +37,7 @@ for i = 1:numel(f)
     if any(strfind(f(i).name,'Wn')), load([f(i).folder '/' f(i).name]), continue, end
     if ~any(strfind(f(i).name,'.mat')), continue, end
     load([f(i).folder '/' f(i).name])
-    assert(d.seizure)
+    assert(d.seizure==1)
     fprintf(['Loading ' f(i).folder '/' f(i).name '...\n'])
     F = cat(3,F,lowpass(lowpass(d.dW,10/500,'ImpulseResponse','iir').',10/500,'ImpulseResponse','iir').');
     D = cat(3,D,d.dW);

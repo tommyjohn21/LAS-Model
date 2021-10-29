@@ -61,7 +61,6 @@ for i = 1:p.no_simulations
             % Run final seizure detection at end of run if no seizure
             % detected prior
             [seizure,detector_metrics] = wavelet_detector(O,p);
-            if ~seizure, keyboard, end
             disp(['t = ' num2str(O.t/1000) 's, end'])
             break
         end
