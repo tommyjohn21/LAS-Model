@@ -13,7 +13,7 @@ param = sbm.simulate_mini_model('get_defaults');
 % param.stim_location = [0.475 0.525];
 param.threshold_reptitions = 100;
 param.threshold_stimulations = 0;
-param.threshold_sigmas = [5:5:10 12.5 15:2.5:35 40];
+param.threshold_sigmas = [5:5:10 15:2.5:35 40];
 param.flag_deterministic = 0;
 % param.flag_return_voltage_trace = true;
 % param.flag_return_state_trace = true;
@@ -69,9 +69,13 @@ S = sum(W,2);
 dW1 = mean(D(:,:,i(1:10)),3);
 dW2 = mean(D(:,:,i(46:55)),3);
 dW3 = mean(D(:,:,i(end-9:end)),3);
-  
-% Set dW matrix to type 1
-param.dW_matrix = dW1;
+
+%% Cherry-picking
+% For Example 1, i = 7
+% For Example 2, i = 50
+dW7 = D(:,:,i(7));
+dW50 = D(:,:,i(50));
+param.dW_matrix = dW7;
 
 %% Run experiment with parameters
 sbm.find_mini_model_threshold(param)
