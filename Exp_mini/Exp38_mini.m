@@ -54,14 +54,15 @@ end
 F = cat(3,D,R);
 A = full(Wn~=0).*(F-1);
 B = reshape(A,[size(A,1).*size(A,2) size(A,3)]);
-[c,s,l]=pca(B);
+[c,s,l]=pca(zscore(B));
 
 % Take only first two components
 C = c(:,1:2);
 S = s(:,1:2);
 
-% Use cherry picked matrices: 95 and 14
-dWsim = reshape(S*C(14,:).',size(A,1),size(A,2))+1;
+% Use cherry picked matrices: 495 (upward) and 113 (middle)
+i = 113;
+dWsim = reshape(std(B(:,i)).*(S*C(i,:).')+mean(B(:,i)),size(A,1),size(A,2))+1;
 
 param.dW_matrix = dWsim;
 
