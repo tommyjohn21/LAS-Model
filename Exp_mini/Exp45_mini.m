@@ -66,43 +66,21 @@ d = (sum(B.*X)./sqrt(sum(B.^2).*sum(X.^2))).'; % dot product
 i = C(:,1)>0;
 vi = d>0.95; % Take only those that are reconstructed to dot product >0.95;
 
-%% Contstruct rolling average
-r = sqrt(sum(C(:,1:2).^2,2));
-th = atan(C(:,2)./C(:,1));
-
-T = [];
-thi = [0:pi/300:pi/2];
-for j = 1:numel(thi)
-   % take sections of pi/40, in first quadrant, with accuracy of vi (0.95)
-   tp = th<(thi(j)+pi/40) & th>(thi(j)-pi/40) & i & vi;
-   T(:,:,j) = mean(F(:,:,tp),3);
-end
-Q = reshape(T,[size(T,1).*size(T,2) size(T,3)]);
-X = cellfun(@(x)rot90(fliplr(tril(F(:,:,x)-1))) + triu(F(:,:,x)-1),num2cell(1:size(F,3)),'un',0);
-X = cat(3,X{:});
-
-N = nan(500,100,size(X,3));
-for ix = 1:size(X,3);
-    n = nan(500,100);
-    for jx = 1:100
-        n(jx:jx-1+numel(diag(X(:,:,ix),jx)),jx) = diag(X(:,:,ix),jx);
-    end
-    N(:,:,ix) = n;
-end
-
-
-
-% Z = reshape((zscore(Q)/10)+1,size(T,1),size(T,2),size(T,3));
-
 %% Parse matrices into theta bins
+cc = C(i.*vi==1,:);
 r = sqrt(sum(C(i.*vi==1,1:2).^2,2));
 th = atan(C(i.*vi==1,2)./C(i.*vi==1,1));
-cc = C(i.*vi==1,:);
 [y,b] = discretize(th,0:pi/20:pi/2);
 
-j = 1; % Pick sub-population of matrix based on bin
-dWsim = mean(F(:,:,cellfun(@(x)find(cumsum(i.*vi)==x,1,'first'),num2cell(find(y == j)))),3);
-dWsim = dWsim - (triu(dWsim-1)+rot90(fliplr(tril(dWsim-1))));
+% Choose random matrices to test (2 from each bin and a few radial
+% variants)
+% cell2mat(cellfun(@(x) x(randperm(numel(x),2)),cellfun(@(x) find(y==x),num2cell(1:numel(unique(y))),'un',0),'un',0))
+ix = [73 141 233 93 254 285 80 27 132 396 215 242 33 77 348 14 381 280 200 212]; % Randomly generated
+n = find(i.*vi);
+j = n(ix); % These are the orderings in F (vs. y)
+
+jx = 4; % Run through each random matrix
+dWsim = F(:,:,j(jx));
 
 param.dW_matrix = dWsim;
 
