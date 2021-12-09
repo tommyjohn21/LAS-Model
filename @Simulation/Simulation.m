@@ -1,0 +1,227 @@
+classdef Simulation < handle & matlab.mixin.Copyable
+    
+    properties
+        
+        % Intrinsic simulation parameters
+        param
+        
+        % Network to simSulate
+        O   % generate simulation network with Prepare(S)
+        
+        % Record DetectSeizure output
+        detector = struct(...
+            'Seizure',0,...         % Boolean for seizure detected
+            'WaveCollapsed',0,...   % Boolean to determine if tonic wave collapsed (deprecated)
+            'State',[],...          % State trace
+            'V',[]...               % Voltage trace
+            );
+    end
+    
+    %% Constuct the object
+    methods
+        function S = Simulation(SimulationTemplate)
+            
+            % Load simulation settings
+            eval(SimulationTemplate);
+            
+            % Parse simulation params
+            VarList = who;
+            for i = 1:numel(VarList)
+                if isa(eval(VarList{i}),'Simulation')
+                    continue; % Do not save instance itself in its own param field
+                else
+                    S.param.(VarList{i}) = eval(VarList{i});
+                end
+            end
+        end
+    end
+    
+    %% Included functions
+    methods
+        Prepare(S) % Prepare network and input
+        Run(S) % Run simulation
+        DetectSeizure(S) % Detect seizure in current simulation
+    end
+    
+    %% Miscellaneous methods
+    methods
+        
+        % Reset simulation to beginning;
+        function Reset(S)
+            % Pull handle for network/recorder
+            O = S.O; R = S.O.Recorder;
+            
+            % Restore initial conditions
+            O.V = R.Var.V(:,1);
+            O.phi = R.Var.phi(:,1);
+            O.Cl_in = R.Var.Cl_in(:,1);
+            O.g_K = R.Var.g_K(:,1);
+            
+            % Restore initial inputs
+            O.Input.E = 0;
+            O.Input.I = 0;
+            
+            % Reset time counter
+            S.O.t = 0;
+        end
+        
+        function UpdateInput(S,InputType,level)
+            
+            % Assert that there is a Network to update
+            assert(isa(S.O,'SpikingNetwork'),'Simulation must have associated Network for method UpdateInput')
+            
+            % Determine parameter for level (default: sigma)
+            LevelString = 'sigma';
+            if strcmp(InputType,'Deterministic')
+                % LevelString = 'duration'
+                error('You have not debugged for updating deterministic input')
+            end
+            
+            % Update *both* Simulation and Network
+            S.param.input.(InputType).(LevelString) = level;
+            S.O.Ext.(InputType).(LevelString) = level;
+            
+        end
+        
+        function varargout = Plot(S,varargin)
+            
+            % Check that Network is present in Simulation
+            assert(isa(S.O,'SpikingNetwork'),'Network is not found for Simulation. Associated results cannot be plotted.')
+            
+            % Restructure varargin for possible figure handle
+            FigureHandles = cellfun(@(x)isa(x,'matlab.ui.Figure'),varargin);
+            assert(sum(FigureHandles)<=1,'More than one figure handle was given for plotting')
+            if sum(FigureHandles) == 0
+                h = figure('visible','off'); 
+                varargin = [{h} varargin];
+                FigureHandles = cellfun(@(x)isa(x,'matlab.ui.Figure'),varargin);
+            end
+            varargin = [varargin(FigureHandles) varargin(~FigureHandles)];
+            
+            % Parse inputs
+            p = inputParser;
+            ValidateS = @(S) isa(S,'Simulation');
+            ValidateFig = @(h) isa(h,'matlab.ui.Figure');
+            addRequired(p,'S',ValidateS);
+            addRequired(p,'h',ValidateFig);
+            addParameter(p,'Var','V');
+            parse(p,S,varargin{:});
+            h = p.Results.h;
+            
+            % Load data for plotting
+            if strcmp(p.Results.Var,'V')
+                data = S.V;
+                TitleString = 'Voltage';
+                UnitString = [TitleString ' (mV)'];
+            else
+                data = S.O.Recorder.Var.(p.Results.Var)(:,1:S.O.t/S.param.dt);
+                switch p.Results.Var
+                    case 'phi', TitleString = 'Threshold'; UnitString = [TitleString ' (mV)'];
+                    case 'Cl_in', TitleString = '[Cl]_{in}'; UnitString = [TitleString ' (mM)'];
+                    case 'g_K', TitleString = 'g_K'; UnitString = [TitleString ' (nS)'];
+                end
+            end
+            
+            % Plot in figure
+            delete(findobj(h,'type','axes')) % Delete any existing axes
+            ax = axes(h);
+            imagesc([1:S.O.t]./1000,1:prod(S.O.n),data)
+            
+            % Plot titles/labels
+            title([TitleString ' Trace '...
+                '(\Deltat_{stim} = ' num2str(S.param.input.Deterministic.duration) 's, '...
+                '\sigma_S = ' num2str(S.param.input.Random.sigma) 'pA)'])
+            ylabel('Neuron index')
+            xlabel('Time (s)')
+    
+            % Basic Formatting
+            ax.FontSize = 18;
+            c = colorbar;
+            c.Label.String = UnitString;
+            
+            % Make visible if not yet
+            if strcmp(h.Visible,'off'), h.Visible = 'on'; end
+            
+            % Return figure handle as desired
+            if nargout == 1, varargout{1} = p.Results.h; end
+            
+        end
+        
+        
+    end
+    
+    methods (Hidden = true)
+        
+        % Return voltage trace
+        function VoltageTrace = V(S), VoltageTrace = S.O.Recorder.Var.V(:,1:S.O.t/S.param.dt); end
+                
+        % Save function (transition to struct)
+        function s = saveobj(S)
+            
+            % Initialize output structure
+            s = struct();
+
+            % Transition to structure for saving
+            fn = fieldnames(S);
+            for i = 1:numel(fn)
+                if strcmp(fn{i},'O')
+                    s.(fn{i}) = struct('param',S.O.param);
+                else
+                    s.(fn{i}) = S.(fn{i});
+                end
+            end
+            
+        end
+        
+    end
+       
+    methods (Static)
+        % Load function (transition from struct)
+        function S = loadobj(s)
+            
+            % Reconstruct Simulations
+            %   Note that this does not reconstruct Voltage or State traces
+            S = Simulation(s.param.SimulationTemplate);
+            S.param = s.param;
+            Prepare(S) % Generate network as dictated in e.S.param
+            
+            % Compare prepared SpikingModel to loaded parameters
+            fn1 = fieldnames(s.O.param);
+            fn2 = fieldnames(S.O.param);
+            assert(isempty(setdiff(fn1,fn2)) && isempty(setdiff(fn2,fn1)),...
+                ['Prepared SpikingModel and loaded SpikingModel parameters have '...
+                'non-shared fields!'])
+            % First, check equality among numeric parameters
+            for i = 1:numel(fn1)
+               if ~(isa(S.O.param.(fn1{i}),'function_handle') && isa(s.O.param.(fn1{i}),'function_handle'))
+                   assert(isequal(S.O.param.(fn1{i}),s.O.param.(fn1{i})),['Loaded and Prepared SpikingModels '...
+                       'differ in parameter ' fn1{i} '!'])
+               end
+            end
+            % Regenerate anonymous functions
+            for i = 1:numel(fn1)
+                if isa(S.O.param.(fn1{i}),'function_handle') && isa(s.O.param.(fn1{i}),'function_handle')
+                    assert(isequal(func2str(S.O.param.(fn1{i})),func2str(s.O.param.(fn1{i}))),['Function strings differ '...
+                        'between Prepared and loaded SpikingModel!'])
+                    
+                    % True equality in anonymous functions cannot be
+                    % gauranteed, although we can regenerate here in
+                    % accordance with values in loaded SpikingModel
+                    str = (['S.O.param.' fn1{i} ' = ' func2str(s.O.param.(fn1{i})) ';']);
+                    vars = fn1(cellfun(@(x)contains(func2str(s.O.param.(fn1{i})),x),fn1));
+                    VarStr = cellfun(@(x) [x ' = s.O.param.' x '; '],vars,'un',0);
+                    VarStr = [VarStr{:}];
+                    eval([VarStr str])
+                    
+                end
+            end
+            
+            % Reattach detector
+            S.detector = s.detector;
+            
+        end
+        
+        
+    end
+    
+end
