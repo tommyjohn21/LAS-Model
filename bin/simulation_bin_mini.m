@@ -33,7 +33,7 @@ end
 
 for i = 1:p.no_simulations
     
-    disp(['Stim ' num2str(p.(stim)) ', sim ' num2str(i) ' of ' num2str(p.no_simulations)])
+    disp([p.expdir ': Stim ' num2str(p.(stim)) ', sim ' num2str(i) ' of ' num2str(p.no_simulations)])
     
     %%% Preliminaries
     % Generate mini model
