@@ -68,11 +68,13 @@ j = [j 657 691 426 628  69 938 864 686 657 77 905 4 195 912 136 530 880 784 782 
 %% Run experiment
 % Map dW matrix to Exp Dir
 fdir = 62:62+numel(j)-1;
+if ~contains(param.vardir,'Exp_mini'), param.vardir = [param.vardir 'Exp_mini/']; end
+if ~exist(param.vardir), mkdir(param.vardir); end
 
 for jx = 1:2:numel(j)
     
     % Update save directory
-    param.expdir = ['Exp' num2str(fdir(jx)) '_mini'];
+    param.expdir = ['Exp' num2str(fdir(jx)) '_mini/'];
     
     % Create directory if needed
     if ~exist(param.fullpath(param)), mkdir(param.fullpath(param)); end
