@@ -44,6 +44,7 @@ classdef ThresholdExperiment < Experiment
             
             % Clear param field in E
             E.param = [];
+            E.S = [];
             
             for i = 1:numel(f)
                % Load Experiment file
@@ -88,7 +89,7 @@ classdef ThresholdExperiment < Experiment
             % (n)
             s = []; n = [];
             for i = 1:numel(UniqueInputs)
-                trials = arrayfun(@(x)x.detector.Seizure,E.S(inputs == UniqueInputs(i)));
+                trials = arrayfun(@(x)x.Seizure,E.S(inputs == UniqueInputs(i)).detector);
                 s = [s sum(trials)];
                 n = [n numel(trials)];
             end
@@ -134,15 +135,7 @@ classdef ThresholdExperiment < Experiment
                e.(fn{i}) = E.(fn{i});
            end
         end
-        
-        % Update variable and experiment directories as needed
-        function UpdateDir(E,vardir)
-            vardir = ['~/' vardir '/']; % Default
-            if ~Server(E), vardir = strrep(vardir,'~/','~/Desktop/'); end
-            E.param.vardir = vardir;
-            E.param.expdir = [vardir E.param.name '/'];
-        end
-        
+               
     end
         
     methods (Static = true)

@@ -63,23 +63,31 @@ classdef Simulation < handle & matlab.mixin.Copyable
             
             % Reset time counter
             S.O.t = 0;
+            
+            % Reset plasticity matrix
+            for i = 1:numel(O.Proj.In)
+                if O.Proj.In(i).STDP.Enabled
+                    O.Proj.In(i).STDP.W = ones(size(O.Proj.In(i).STDP.W));
+                end
+            end
+            
         end
         
         function UpdateInput(S,InputType,level)
             
             % Assert that there is a Network to update
             assert(isa(S.O,'SpikingNetwork'),'Simulation must have associated Network for method UpdateInput')
-            
+                        
             % Determine parameter for level (default: sigma)
-            LevelString = 'sigma';
-            if strcmp(InputType,'Deterministic')
-                % LevelString = 'duration'
-                error('You have not debugged for updating deterministic input')
+            if strcmp(InputType,'Random')
+                LevelString = 'sigma'; 
+            elseif strcmp(InputType,'Deterministic')
+                LevelString = 'duration';
             end
             
-            % Update *both* Simulation and Network
-            S.param.input.(InputType).(LevelString) = level;
-            S.O.Ext.(InputType).(LevelString) = level;
+            % Update Simulation AND Network
+            S.param.input.(InputType).(LevelString) = level; % Update Simulation input
+            Prepare(S); % Update deterministic input by regenerating network
             
         end
         
@@ -165,7 +173,18 @@ classdef Simulation < handle & matlab.mixin.Copyable
             fn = fieldnames(S);
             for i = 1:numel(fn)
                 if strcmp(fn{i},'O')
+                    
+                    % Save network parameters
                     s.(fn{i}) = struct('param',S.O.param);
+                    
+                    % Pull all STDP weighting matrices
+                    s.(fn{i}).Enabled = arrayfun(@(x)x.STDP.Enabled==1,S.O.Proj.In);
+                    s.(fn{i}).W = arrayfun(@(x)x.STDP.W,S.O.Proj.In,'un',0);
+                    
+                    % Retain only those Projections with STDP Enabled
+                    s.(fn{i}).W(~(s.(fn{i}).Enabled)) = [];
+                    s.(fn{i}).Enabled = find(s.(fn{i}).Enabled);
+                   
                 else
                     s.(fn{i}) = S.(fn{i});
                 end
@@ -218,6 +237,13 @@ classdef Simulation < handle & matlab.mixin.Copyable
             
             % Reattach detector
             S.detector = s.detector;
+            
+            % Reattach STDP if Enabled
+            if isfield(s.O,'Enabled') && ~isempty(s.O.Enabled)
+               S.O.Proj.In(s.O.Enabled).STDP.Enabled = 1;
+               if numel(s.O.Enabled)>1, error('The following line is not debugged for STDP enabled for more than 1 Projection'); end
+               S.O.Proj.In(s.O.Enabled).STDP.W = s.O.W{:};
+            end
             
         end
         

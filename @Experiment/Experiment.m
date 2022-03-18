@@ -47,6 +47,14 @@ classdef Experiment < handle & matlab.mixin.Copyable
             expdir = [VarDir(E) E.param.name '/'];
         end
         
+        % Update variable and experiment directories as needed
+        function UpdateDir(E,vardir)
+            vardir = ['~/' vardir '/']; % Default
+            if ~Server(E), vardir = strrep(vardir,'~/','~/Desktop/'); end
+            E.param.vardir = vardir;
+            E.param.expdir = [vardir E.param.name '/'];
+        end
+        
     end
     
 end

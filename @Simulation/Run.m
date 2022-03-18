@@ -26,7 +26,7 @@ while 1
     
     % Detect seizures
     if mod(O.t,5000)==0 && (O.t>((2+S.param.input.Deterministic.duration+0.5)*1000)) % Do not check until after deterministic stimulation
-        DetectSeizure(S)
+        if S.param.flags.DetectSeizure, DetectSeizure(S), end
         if S.param.flags.kill.IfSeizure && S.detector.Seizure, break, end
         if S.param.flags.kill.IfWaveCollapsed && S.detector.WaveCollapsed, break, end
         disp(['t = ' num2str(O.t/1000) 's, continue'])
