@@ -103,10 +103,10 @@ classdef PlasticityExperiment < Experiment
                for j = 1:3
                    if j == 1
                        assert(E.S(i).O.Proj.In(j).Type=='E')
-                       assert(E.S(i).O.Proj.In(j).STDP.Enabled)
+                       assert(E.S(i).O.Proj.In(j).STDP.Enabled==1)
                    else
                        assert(E.S(i).O.Proj.In(j).Type=='I')
-                       assert(~E.S(i).O.Proj.In(j).STDP.Enabled)
+                       assert(E.S(i).O.Proj.In(j).STDP.Enabled==0)
                    end
                end  
             end
