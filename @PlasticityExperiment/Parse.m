@@ -11,6 +11,9 @@ function Parse(E)
 % 3. Parse results
 %       a. Parse(E)
 
+% Return if already parsed
+if E.parsed, return, end
+
 % Ensure only the first projection has STDP Enabled
 for i = 1:numel(E.S(1).O.Proj.In)
     if i == 1

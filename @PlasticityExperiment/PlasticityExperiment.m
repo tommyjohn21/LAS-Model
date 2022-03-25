@@ -8,12 +8,6 @@ classdef PlasticityExperiment < Experiment
         %   S:        Simulation object used in experiment
         %   param:    Experiment parameters
         
-        pca = struct(...    %   Structure to hold results of PCA across weighting matrices
-            'c',[],...      %       c: coeff matrices (see pca documentation: help pca)
-            's',[],...      %       s: scores
-            'l',[]...       %       l: latent
-        );
-        
     end
     
     properties (Hidden = true)
@@ -26,6 +20,12 @@ classdef PlasticityExperiment < Experiment
                                 %   has STDP enabled; this is to be used as a 
                                 %   catch for further development if other 
                                 %   Projections (e.g. inhibitory) have STDP enabled)
+                                
+        pca = struct(...        %   Structure to hold results of PCA across weighting matrices
+            'c',[],...          %       c: coeff matrices (see pca documentation: help pca)
+            's',[],...          %       s: scores
+            'l',[]...           %       l: latent
+        );
         
     end
     
@@ -118,7 +118,7 @@ classdef PlasticityExperiment < Experiment
         
         % Function to return weight matrix from one instance of
         % PlasticityExperiment
-        function dW = dW(E,i,varargin)
+        function dW = Retrieve(E,i,varargin)
             
             % Rotation flag
             rotate = true;
@@ -129,6 +129,7 @@ classdef PlasticityExperiment < Experiment
             % Assertions
             assert(E.StandardSTDP,'Code is only written for StandardRecurrentConnection configuration')
             assert(E.parsed,'PlasticityExperiment must be parsed to retrieve dW (e.g. Parse(E))')
+            assert(all(sum(E.pca.c(:,1:2)>0)./size(E.pca.c,1) == [0.5 1]),'1st PCA axis must change sign on rotation, and 2nd PCA axis must not. Consider if 1st and 2nd PCA componenets are reversed')
             
             % Patch to retain earlier nomenclature of rotated matrices
             if floor(i./numel(E.S)) == 1
