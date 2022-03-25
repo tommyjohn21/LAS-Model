@@ -37,7 +37,7 @@ end
 DefaultRecurrentConnection(S.O); % output P_E for ease of adjustment
 
 % Update weights with dW if desired
-if S.param.dW ~=1, UpdateWeightMatrix(S), end
+if any(S.param.dW(:) ~= 1), UpdateWeightMatrix(S), end
 
 % Enable STDP if desired
 if S.param.flags.realtimeSTDP, EnableSTDP(S), end
