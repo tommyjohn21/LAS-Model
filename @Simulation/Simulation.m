@@ -5,7 +5,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
         % Intrinsic simulation parameters
         param
         
-        % Network to simSulate
+        % Network to simulate
         O   % generate simulation network with Prepare(S)
         
         % Record DetectSeizure output
@@ -15,6 +15,18 @@ classdef Simulation < handle & matlab.mixin.Copyable
             'State',[],...          % State trace
             'V',[]...               % Voltage trace
             );
+
+        % Record rng settings 
+        % Note: this MAY or MAY NOT match param.RandomSeed as
+        % param.RandomSeed records rng settings that WILL BE USED in the
+        % UPCOMING/NEXT Simulation, whereas seed (here) records rng
+        % settings THAT WERE ACTUALLY USED during PRIOR/LAST Simulation
+        seed = struct(...
+            'Type','none',...       % rng type 
+            'Seed',NaN,...          % rng seed
+            'State',NaN...          % rng state vector (625 is length of rng state vector)
+            );
+
     end
     
     %% Constuct the object
@@ -60,7 +72,14 @@ classdef Simulation < handle & matlab.mixin.Copyable
             % Restore initial inputs
             O.Input.E = 0;
             O.Input.I = 0;
+            O.Ext.Random.Iz = 0;
             
+            % Reset spiking-related variables
+            O.S.S = false(O.n); % Logical value, decide whether there is a spike or not
+            O.S.dT = zeros(O.n); % The previous spike            
+            O.S.x = ones(O.n); % short-term plasticity variables
+            O.S.u = O.param.U; % short-term plasticity variables
+
             % Reset time counter
             S.O.t = 0;
             
@@ -69,6 +88,23 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 if O.Proj.In(i).STDP.Enabled
                     O.Proj.In(i).STDP.W = ones(size(O.Proj.In(i).STDP.W));
                 end
+            end
+            
+            % Reset/Record new RandomSeed
+            if isfield(S.param.flags,'UsePresetSeed') && S.param.flags.UsePresetSeed
+                try
+                    % Try to use seed present in S.param
+                    rng(S.param.RandomSeed)
+                catch % If no seed present, create new
+                    warning('Unable to UsePresetSeed. Creating new RandomSeed instead.')
+                    S.param.RandomSeed = rng;
+                end
+            elseif isfield(S.param.flags,'UsePresetSeed') && ~S.param.flags.UsePresetSeed
+                % Save new seed if do not wish to use PresetSeed
+                S.param.RandomSeed = rng;
+            else
+                % This contingency is for legacy; if no UsePresetSeed flag exists, do
+                % not need to create one
             end
             
         end
@@ -237,6 +273,14 @@ classdef Simulation < handle & matlab.mixin.Copyable
             
             % Reattach detector
             S.detector = s.detector;
+            
+            % Try to reattach seed(s) if one exists
+            if isfield(S.param.flags,'UsePresetSeed')
+                try S.seed = s.seed;
+                catch
+                    error('No prior seed found on loading!');
+                end
+            end
             
             % Reattach STDP if Enabled
             if isfield(s.O,'Enabled') && ~isempty(s.O.Enabled)

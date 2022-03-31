@@ -53,8 +53,9 @@ function ExecuteSimulations(TE,i)
         % Update input
         UpdateInput(S,type,level);
         
-        % Initialize output structure
+        % Initialize output structures
         detector = []; % Empty detector for concatenation
+        seed = []; % Empty seed container for concatenation
         
         % Skip Simulation if already performed
         FileName = sprintf([param.expdir 'ThresholdExperiment-Level-%0.1f.mat'],level);
@@ -65,11 +66,13 @@ function ExecuteSimulations(TE,i)
             fprintf('Level %0.1f, simulation %i of %i\n',level,j,param.n)
             Run(S)
             detector = [detector S.detector]; % Append detector from each simulation
+            seed = [seed S.seed]; % Retain seeds used in each simulation
             Reset(S)
         end
         
         % Append completed results
         TE.S.detector = detector;
+        TE.S.seed = seed;
 
         % Save output
         parsave(FileName,TE)

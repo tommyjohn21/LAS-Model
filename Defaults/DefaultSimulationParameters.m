@@ -39,8 +39,10 @@ flags = struct(...
         'StateTrace',false...       %   Return detected state trace
         ),...
     'normalizeSTDP',true,...        % Normalize neuron output after updating weights
-    'DetectSeizure',true...         % Detect seizures during simulation
+    'DetectSeizure',true,...        % Detect seizures during simulation
+    'UsePresetSeed',false...        % Create new random seed when (re-)running simulation
     );
 
 % Miscellaneous settings
 server = strcmp(computer,'GLNXA64');    % Use method Server to detect if simulation running on server
+RandomSeed = rng;                       % Generate RandomSeed to be used on simulation run
