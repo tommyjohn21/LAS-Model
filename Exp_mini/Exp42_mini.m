@@ -31,10 +31,12 @@ param.flag_renormalize_dW_matrix = true;
 f = dir('~/Desktop/Exp22_mini/');
 D = [];
 R = [];
+tmpf = [];
 for i = 1:numel(f)
     if any(strfind(f(i).name,'Wn')), load([f(i).folder '/' f(i).name]), continue, end
     if ~any(strfind(f(i).name,'.mat')), continue, end
     load([f(i).folder '/' f(i).name])
+    tmpf = [tmpf f(i)];
     assert(d.seizure==1)
     fprintf(['Loading ' f(i).folder '/' f(i).name '...\n'])
     D = cat(3,D,d.dW);

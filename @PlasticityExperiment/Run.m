@@ -21,14 +21,14 @@ if E.S.O.t>0, Reset(E.S); end
 
 % Override to activate realtimeSTDP, deactivate kill.IfSeizure
 if ~E.S.param.flags.realtimeSTDP || ...
-        ~E.S.param.flags.kill.IfSeizure || ...
+        E.S.param.flags.kill.IfSeizure || ...
         ~E.S.param.flags.kill.IfWaveCollapsed
     warning('Simulation flags (realtimeSTDP, kill.IfSeizure, kill.IfWaveCollapsed) are incompatible with PlasticityExperiment. Overriding...')
     E.S.param.flags.realtimeSTDP = true; % Set realtimeSTDP flag
     E.S.param.flags.kill.IfSeizure = false;
     E.S.param.flags.kill.IfWaveCollapsed = true;
+    Prepare(E.S); % Regenerate network with updated flag settings
 end
-Prepare(E.S); % Regenerate network with updated flag settings
 
 % Assert that inputs are Deterministic (i.e. not Random)
 %   In this case, PlasticityExperiment is done with different durations of

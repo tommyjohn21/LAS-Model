@@ -36,6 +36,7 @@ F = [];
 for i = 1:numel(f)
     if any(strfind(f(i).name,'Wn')), load([f(i).folder '/' f(i).name]), continue, end
     if ~any(strfind(f(i).name,'.mat')), continue, end
+%     if str2num(f(i).name(16:end-4))>100, continue, end
     load([f(i).folder '/' f(i).name])
     assert(d.seizure==1)
     fprintf(['Loading ' f(i).folder '/' f(i).name '...\n'])

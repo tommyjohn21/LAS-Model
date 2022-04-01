@@ -42,22 +42,8 @@ if any(S.param.dW(:) ~= 1), UpdateWeightMatrix(S), end
 % Enable STDP if desired
 if S.param.flags.realtimeSTDP, EnableSTDP(S), end
 
-% Set/Save RandomSeed
-if isfield(S.param.flags,'UsePresetSeed') && S.param.flags.UsePresetSeed
-    try
-        % Try to use seed present in S.param
-        rng(S.param.RandomSeed)
-    catch % If no seed present, create new
-        warning('Unable to UsePresetSeed. Creating new RandomSeed instead.')
-        S.param.RandomSeed = rng;
-    end
-elseif isfield(S.param.flags,'UsePresetSeed') && ~S.param.flags.UsePresetSeed
-    % Save new seed if do not wish to use PresetSeed
-    S.param.RandomSeed = rng;   
-else
-    % This contingency is for legacy; if no UsePresetSeed flag exists, do
-    % not need to create one
-end
+% Adjust random seed if desired
+if isfield(S.param.flags,'UsePresetSeed'), AdjustSeed(S), end
     
 end
 

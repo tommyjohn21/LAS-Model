@@ -16,16 +16,12 @@ classdef Simulation < handle & matlab.mixin.Copyable
             'V',[]...               % Voltage trace
             );
 
-        % Record rng settings 
-        % Note: this MAY or MAY NOT match param.RandomSeed as
-        % param.RandomSeed records rng settings that WILL BE USED in the
-        % UPCOMING/NEXT Simulation, whereas seed (here) records rng
-        % settings THAT WERE ACTUALLY USED during PRIOR/LAST Simulation
-        seed = struct(...
-            'Type','none',...       % rng type 
-            'Seed',NaN,...          % rng seed
-            'State',NaN...          % rng state vector (625 is length of rng state vector)
-            );
+        % Record rng settings for Simulation
+        % Note: if prefer to use preset seed, do the following:
+        %   S.param.flags.UsePresetSeed = true;
+        %   S.seed = PresetSeed; (e.g. your desired seed)
+        %   Prepare(S)
+        seed = rng;
 
     end
     
@@ -90,23 +86,34 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 end
             end
             
-            % Reset/Record new RandomSeed
-            if isfield(S.param.flags,'UsePresetSeed') && S.param.flags.UsePresetSeed
+            % Adjust random seed if desired
+            if isfield(S.param.flags,'UsePresetSeed'), AdjustSeed(S), end
+
+        end
+        
+        function AdjustSeed(S)
+            
+            % Set/Save RandomSeed
+            if S.param.flags.UsePresetSeed
                 try
-                    % Try to use seed present in S.param
-                    rng(S.param.RandomSeed)
+                    % Try to use seed present in S.seed
+                    rng(S.seed)
                 catch % If no seed present, create new
                     warning('Unable to UsePresetSeed. Creating new RandomSeed instead.')
-                    S.param.RandomSeed = rng;
+                    S.seed = rng;
                 end
-            elseif isfield(S.param.flags,'UsePresetSeed') && ~S.param.flags.UsePresetSeed
+            elseif ~S.param.flags.UsePresetSeed
                 % Save new seed if do not wish to use PresetSeed
-                S.param.RandomSeed = rng;
-            else
-                % This contingency is for legacy; if no UsePresetSeed flag exists, do
-                % not need to create one
+                S.seed = rng;
             end
             
+        end
+        
+        function Plasticize(S)
+            % Ready Simulation for PlasticityExperiment
+            S.param.flags.realtimeSTDP = true;
+            S.param.flags.kill.IfSeizure = false;
+            S.param.flags.kill.IfWaveCollapsed = true;
         end
         
         function UpdateInput(S,InputType,level)
@@ -198,7 +205,10 @@ classdef Simulation < handle & matlab.mixin.Copyable
         
         % Return voltage trace
         function VoltageTrace = V(S), VoltageTrace = S.O.Recorder.Var.V(:,1:S.O.t/S.param.dt); end
-                
+        
+        % Return updated weight matrix
+        function dW = dW(S), dW = S.O.Proj.In(1).STDP.W; end
+        
         % Save function (transition to struct)
         function s = saveobj(S)
             
@@ -275,11 +285,15 @@ classdef Simulation < handle & matlab.mixin.Copyable
             S.detector = s.detector;
             
             % Try to reattach seed(s) if one exists
-            if isfield(S.param.flags,'UsePresetSeed')
-                try S.seed = s.seed;
-                catch
-                    error('No prior seed found on loading!');
-                end
+            try S.seed = s.seed;
+            catch
+                % If unable to load seed, create empty seed structure
+                % This is mostly for legacy/backwards-compatibility
+                S.seed = arrayfun(@(n)...
+                    struct('Type','none',...
+                    'Seed',NaN,...
+                    'State',NaN),...
+                    1:numel(S.detector));
             end
             
             % Reattach STDP if Enabled

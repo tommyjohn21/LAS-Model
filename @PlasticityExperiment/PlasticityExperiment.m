@@ -64,17 +64,21 @@ classdef PlasticityExperiment < Experiment
             % Load contents of expdir associated with E
             f = dir(fullfile(E.param.expdir,'PlasticityExperiment-*.mat'));
             
+            % Sort in numerical order (c.f. character/alphabetical order)
+            [~,idx] = sort(arrayfun(@(s)str2num(s.name(22:end-4)),f));
+            f = f(idx);
+            
             % Clear param field in E
             E.param = [];
             E.S = [];
             
             % Loading bar
-            fprintf('Loading: [          ]\n')
+            fprintf('Loading: [          ]')
             
             for i = 1:numel(f)
                 % Update loading bar
                 if rem(i./numel(f)*100,10) == 0
-                   fprintf([repmat('\b',1,12) repmat('-',1,round(i./numel(f)*100)./10) repmat(' ',1,10-round(i./numel(f)*100)./10) ']\n'])
+                   fprintf([repmat('\b',1,11) repmat('-',1,round(i./numel(f)*100)./10) repmat(' ',1,10-round(i./numel(f)*100)./10) ']'])
                 end
                 
                 % Load Experiment file
@@ -83,6 +87,7 @@ classdef PlasticityExperiment < Experiment
                 E.param = [E.param PE.E.param];
                 E.S = [E.S PE.E.S];
             end
+            fprintf('\n')
             
             % Ensure StandardSTDP
             EnsureStandardSTDP(E)

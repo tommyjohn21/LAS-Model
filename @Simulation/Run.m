@@ -9,10 +9,9 @@ dt = S.param.dt; % ms
 R = CreateRecorder(O,round(S.param.duration)); % The 2nd argument is Recorder.Capacity
 T_end = R.Capacity - 1; % simulation end time.
 
-%%% Record RandomSeed used during simulation
-S.seed = rng;
-assert(all(S.seed.State == S.param.RandomSeed.State),...
-    'Recorded seed for Simulation does not match param.RandomSeed. Please debug.')
+%%% Assert that seed for Simulation is correct
+CurrentSeed = rng;
+assert(isequal(S.seed,CurrentSeed),'CurrentSeed is not equal to S.seed. Try Reset(S) and then Run(S).');
 
 %%% Run simulation
 while 1

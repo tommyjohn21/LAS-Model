@@ -31,12 +31,15 @@ param.flag_renormalize_dW_matrix = true;
 %% Create and set average dW matrix
 % Load average dW matrix
 f = dir('~/Desktop/Exp22_mini/');
+tmpf = [];
 D = [];
 F = [];
 for i = 1:numel(f)
     if any(strfind(f(i).name,'Wn')), load([f(i).folder '/' f(i).name]), continue, end
     if ~any(strfind(f(i).name,'.mat')), continue, end
+%     if str2num(f(i).name(16:end-4))>100, continue, end
     load([f(i).folder '/' f(i).name])
+    tmpf = [tmpf f(i)];
     assert(d.seizure==1)
     fprintf(['Loading ' f(i).folder '/' f(i).name '...\n'])
     F = cat(3,F,lowpass(lowpass(d.dW,10/500,'ImpulseResponse','iir').',10/500,'ImpulseResponse','iir').');
