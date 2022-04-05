@@ -1,6 +1,9 @@
 function Run(S)
 % Run simulation
 
+% Ensure Simulation has been Prepared
+assert(S.prepared,'Simulation must be Prepared prior to Run; try Prepare(S)!')
+
 % Pull out handle for network
 O = S.O;
 
@@ -9,9 +12,10 @@ dt = S.param.dt; % ms
 R = CreateRecorder(O,round(S.param.duration)); % The 2nd argument is Recorder.Capacity
 T_end = R.Capacity - 1; % simulation end time.
 
-%%% Assert that seed for Simulation is correct
-CurrentSeed = rng;
-assert(isequal(S.seed,CurrentSeed),'CurrentSeed is not equal to S.seed. Try Reset(S) and then Run(S).');
+%%% Assert that seed for Simulation is correct (AdjustSeed if needed)
+if isfield(S.param.flags,'UsePresetSeed'), AdjustSeed(S), end
+CurrentRNG = rng;
+assert(isequal(CurrentRNG,S.seed),'CurrentRNG is not the same as S.seed!')
 
 %%% Run simulation
 while 1

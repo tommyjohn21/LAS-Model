@@ -21,8 +21,13 @@ classdef Simulation < handle & matlab.mixin.Copyable
         %   S.param.flags.UsePresetSeed = true;
         %   S.seed = PresetSeed; (e.g. your desired seed)
         %   Prepare(S)
-        seed = rng;
+        seed
 
+    end
+    
+    properties (Hidden = true)
+       % Internal record keeping about whether simulation has been prepared
+       prepared = false; 
     end
     
     %% Constuct the object
@@ -41,6 +46,10 @@ classdef Simulation < handle & matlab.mixin.Copyable
                     S.param.(VarList{i}) = eval(VarList{i});
                 end
             end
+            
+            % Run seed generation algorithm
+            AdjustSeed(S);
+            
         end
     end
     
@@ -56,6 +65,11 @@ classdef Simulation < handle & matlab.mixin.Copyable
         
         % Reset simulation to beginning;
         function Reset(S)
+            
+            % Kick back if Simulation not Prepared
+            assert(S.prepared, 'Simulation must be Prepared prior to Reset. Try Prepare(S).')
+            assert(~isempty(S.O.Recorder), 'Simulation must have associated Recorder to Reset! Simulation was likely Prepared but not yet Run, in which case: is Reset(S) necessary?')
+            
             % Pull handle for network/recorder
             O = S.O; R = S.O.Recorder;
             
@@ -100,11 +114,13 @@ classdef Simulation < handle & matlab.mixin.Copyable
                     rng(S.seed)
                 catch % If no seed present, create new
                     warning('Unable to UsePresetSeed. Creating new RandomSeed instead.')
-                    S.seed = rng;
+                    rng('shuffle'); % Create new rng state
+                    S.seed = rng; % Store new state
                 end
             elseif ~S.param.flags.UsePresetSeed
                 % Save new seed if do not wish to use PresetSeed
-                S.seed = rng;
+                rng('shuffle'); % Create new rng state
+                S.seed = rng; % Store new state
             end
             
         end
@@ -130,7 +146,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
             
             % Update Simulation AND Network
             S.param.input.(InputType).(LevelString) = level; % Update Simulation input
-            Prepare(S); % Update deterministic input by regenerating network
+            Prepare(S); % Update deterministic input by regenerating network (this is a hack that likely needs a better solution)
             
         end
         

@@ -7,6 +7,9 @@ function Prepare(S)
     % Generate external inputs
     PrepareInput(S)
 
+    % Change internal prepared state
+    S.prepared = true;
+    
 end
 
 %% Prepare network
