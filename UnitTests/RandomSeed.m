@@ -153,3 +153,33 @@ V7 = V(U);
 dW7 = U.dW;
 assert (~all(V3(:)==V7(:)) && ~all(dW3(:)==dW7(:)),'Resetting and (re-)Running U with new seed did not produce different seizure/dW matrix!')
 disp('Passed Unit Test 12')
+
+%% Unit Test 13 and 14
+% Ensure that Simulation can be (re-)Run after save/load
+
+% Save/Load Simulation
+save('~/tmp.mat', 'S', '-v7.3');
+W = load('~/tmp.mat');
+delete('~/tmp.mat');
+W = W.S;
+
+% Turn on PresetSeed, clear W.dW and Run
+%   Note: Need to reset W.dW so you can start realtimeSTDP learning from the
+%         ground up; could also use Reset(W), but prefer explicit
+%         demonstration here so as to disabuse the notion that Simulation
+%         must be Reset prior to (Re-)Run; this is, in general, not true
+W.param.flags.UsePresetSeed = true;
+W.O.Proj.In(1).STDP.W = ones(size(W.O.Proj.In(1).STDP.W));
+Run(W)
+[V8,dW8] = deal(V(W),W.dW);
+
+%%% Unit Test 13
+% Seed should not be changed by save/load
+assert(isequal(W.seed,S.seed),'Seed is changed by save/load!')
+disp('Passed Unit Test 13')
+
+%%% Unit Test 14
+% Ensure same seizure and dW matrix are generated after load
+assert (all(V1(:)==V8(:)) && all(dW1(:)==dW8(:)),'(Re-)Run after save/load unexpectedly produced different seizures/dW matrices!')
+disp('Passed Unit Test 14')
+

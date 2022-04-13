@@ -157,6 +157,28 @@ classdef PlasticityExperiment < Experiment
 
         end
         
+        % Function to return first two pca coordinates for plotting
+        % (rotated as apporpriate)
+        function coordinates = Coord(E,varargin)
+            
+            % Assertions (taken from Retrieve function)
+            assert(E.StandardSTDP,'Code is only written for StandardRecurrentConnection configuration')
+            assert(E.parsed,'PlasticityExperiment must be parsed to retrieve dW (e.g. Parse(E))')
+            assert(all(sum(E.pca.c(:,1:2)>0)./size(E.pca.c,1) == [0.5 1]),'1st PCA axis must change sign on rotation, and 2nd PCA axis must not. Consider if 1st and 2nd PCA componenets are reversed')
+            
+            % Pull (sign-corrected, i.e. rotated) coordinates
+            coordinates = abs(E.pca.c(:,1:2)); % Return sign-corrected entries
+            coordinates = coordinates(1:numel(E.S),:); % Return the first 1:N (i.e. number of Simulations)
+            
+            if ~isempty(varargin)
+                % Use varargin for specific coordinates
+                assert(all(floor(varargin{1}) == varargin{1}),'Argument to Coord must be integer or array of integers!'); % Assert that varargin{1} is composed of integers
+                coordinates = coordinates(varargin{1},:);
+            end
+            
+        end
+        
+        
     end
     
 end

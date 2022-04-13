@@ -10,7 +10,7 @@ classdef Experiment < handle & matlab.mixin.Copyable
             );
         S                               % Simulation object used for Experiment                      
     end
-    
+        
     methods
         % Initialization
         function E = Experiment(ExperimentName)
@@ -54,7 +54,7 @@ classdef Experiment < handle & matlab.mixin.Copyable
             E.param.vardir = vardir;
             E.param.expdir = [vardir E.param.name '/'];
         end
-        
+                
     end
     
 end

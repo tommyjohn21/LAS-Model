@@ -6,6 +6,9 @@ classdef ThresholdExperiment < Experiment
         % Inherits properties from Experiment class:
         %   S:        Simulation object used in experiment
         %   param:    Experiment parameters
+        
+        stim
+        
     end
     
     methods
@@ -121,6 +124,27 @@ classdef ThresholdExperiment < Experiment
             
             % Return figure handle as desired
             if nargout == 1, varargout{1} = p.Results.h; end
+            
+        end
+        
+        function threshold = Threshold(E)
+            
+            % Pull raw data for sigmoid fitting
+            x = arrayfun(@(s)s.param.input.Random.sigma,E.S); % Stimulation inputs used
+            p = arrayfun(@(s)sum([s.detector.Seizure]),E.S)./... % Total seizures...
+                arrayfun(@(s)numel([s.detector.Seizure]),E.S); % divided by Total trials
+            
+            % Sort in ascending order of input
+            [x,i] = sort(x);
+            p = p(i);
+            
+            % Fit sigmoid
+            sig = @(param) (1 + exp(-(x-param(1))./param(2))).^(-1);
+            ofn = @(param) sum((sig(param)-p).^2);
+            fit = fminsearch(ofn,[1.5,1]);
+            
+            % Extract threshold
+            threshold = fit(1);
             
         end
         

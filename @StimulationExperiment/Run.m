@@ -3,7 +3,7 @@ function Run(E)
 %
 % Workflow:
 % 1. Generate Experiment object:
-%       a. E = ThresholdExperiment(ExperimentName)
+%       a. E = StimulationExperiment(ExperimentName)
 %       b. manipulate E.param as needed
 % 2. Initialize Simulation and Simulation parameters to use in Experiment
 %    and Prepare Simulation to generate Network object with network
@@ -19,51 +19,41 @@ function Run(E)
 % Reset simulation if needed
 if E.S.O.t>0, Reset(E.S); end
 
-% Assert that inputs are Random (i.e. not Deterministic)
-%   In this case, ThresholdExperiment is done with different levels of
-%   noise as stimulation (vs. varying duration of deterministic
-%   stimulation)
-assert(strcmp(E.param.inputs.type,'Random'),['You have only written for '...
-    'detection of threshold in response to noise.'])
-
 % Create ExpDir if doesn't exist
 if ~exist(E.param.expdir,'dir'), mkdir(E.param.expdir); end
 
 %%% Conditional parallel computation %%%
 % Grand data concatenation for passage in parfor
-levels = E.param.inputs.levels;
-TE = cellfun(@(x)copy(E),num2cell(1:numel(levels)),'un',0);
+inputs = ExpandInputs(E);
+SE = cellfun(@(x)copy(E),num2cell(1:numel(inputs)),'un',0);
 if E.param.server || E.param.flags.parallel
-    parfor (i = 1:numel(levels)), ExecuteSimulations(TE{i},i); end
+    parfor (i = 1:numel(inputs)), ExecuteSimulations(SE{i},inputs(i)); end
 else
-    for i = 1:numel(levels), ExecuteSimulations(TE{i},i); end
+    for i = 1:numel(inputs), ExecuteSimulations(SE{i},inputs(i)); end
 end
 end
 
-function ExecuteSimulations(TE,i)
+function ExecuteSimulations(SE,input)
 
         % Pull local Simulation handle
-        S = TE.S;
+        S = SE.S;
         
-        % Identify local level/type for ThresholdExperiment for readability
-        param = TE.param;
-        type = param.inputs.type;
-        level = param.inputs.levels(i);
-        
-        % Update input
-        UpdateInput(S,type,level);
-        
+        % Substitute local input parameters
+        SE.S.O.Ext.Deterministic = @(x,t) EvaluateStimulation(SE,input,x,t);
+                
         % Initialize output structures
         detector = []; % Empty detector for concatenation
         seed = []; % Empty seed container for concatenation
         
         % Skip Simulation if already performed
-        FileName = sprintf([param.expdir 'ThresholdExperiment-Level-%0.1f.mat'],level);
+        FileName = sprintf([SE.param.expdir 'StimulationExperiment-Input-'...
+            strjoin(compose('%X',100*[input.frequency input.magnitude input.pulsewidth input.pulsenum]),'.')...
+            '.mat']); % Filename in composed in hexadecimal for unique file identifier
         if exist(FileName,'file'), return, end
         
         % Run simulations
-        for j = 1:param.n
-            fprintf('Level %0.1f, simulation %i of %i\n',level,j,param.n)
+        for j = 1:SE.param.n
+            fprintf('%i pulses, %i pA, %i ms, %i Hz: simulation %i of %i\n',input.pulsenum,input.magnitude,input.pulsewidth,input.frequency,j,SE.param.n)
             Run(S)
             detector = [detector S.detector]; % Append detector from each simulation
             seed = [seed S.seed]; % Retain seeds used in each simulation
@@ -71,11 +61,14 @@ function ExecuteSimulations(TE,i)
         end
         
         % Append completed results
-        TE.S.detector = detector;
-        TE.S.seed = seed;
+        SE.S.detector = detector;
+        SE.S.seed = seed;
+        
+        % Save Stimulation settings
+        SE.S.param.input.Stimulation = input;
 
         % Save output
-        parsave(FileName,TE)
+        parsave(FileName,SE)
 
 end
 

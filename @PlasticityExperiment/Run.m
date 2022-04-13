@@ -6,7 +6,7 @@ function Run(E)
 %       a. E = PlasticityExperiment(ExperimentName)
 %       b. manipulate E.param as needed
 % 2. Initialize Simulation and Simulation parameters to use in Experiment
-%    and Prepare Simulation to generate Network object with newtork
+%    and Prepare Simulation to generate Network object with network
 %    parameters:
 %       a. S = Simulation(SimulationTemplate);  % Load simulation parameters
 %       b. manipulate S.param as needed
