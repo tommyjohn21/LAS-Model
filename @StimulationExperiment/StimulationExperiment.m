@@ -171,11 +171,12 @@ classdef StimulationExperiment < Experiment
                     (frequency > 0) && ...
                     (pulsewidth > 0) && ...
                     (pulsewidth <= (1./frequency*1000)) && ... % pulsewidth cannot be longer than period of stimulation
-                    (floor(duration./frequency) >= 1) && ... % Ensure at least one pulse
-                    ((duration./frequency - floor(duration./frequency))*1000 > pulsewidth); % Ensure an integer number of pulses fit into the duration (avoid partial pulses; note this guarantees a second full pulse for all stimulations)
+                    (pulsewidth <= duration*1000) && ... % pulsewidth cannot be longer than duration of stimulation (note: this ensures at least 1 pulse)
+                    (floor(duration.*frequency) >= 1) && ... % Ensure at least one pulse
+                    (((duration.*frequency - floor(duration.*frequency))*1000 >= pulsewidth) || ((duration.*frequency - floor(duration.*frequency))*1000 == 0)); % Ensure an integer number of pulses fit into the duration (avoid partial pulses; note this guarantees a second full pulse for all stimulations)
                 
                 % Return number of pulses in ParamArray
-                pulsenum = floor(duration./frequency)+1;
+                pulsenum = floor(duration.*frequency)+1;
                       
             end
             
