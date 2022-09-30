@@ -73,7 +73,7 @@ classdef StimulationExperiment < Experiment
             % Check time parameters; return nothing if outside of
             % stimulation window/stimulation location
             if t < StimParam.delay.*1000, current = 0.*x(:,1); return,
-            elseif t > (StimParam.delay.*1000 + StimParam.duration.*1000), current = 0.*x(:,1); return,
+            elseif t > (StimParam.delay.*1000 + StimParam.duration.*1000) - 1, current = 0.*x(:,1); return,
             end 
             
             % Ensure that location of stimulation is [0.4750 0.5250]
@@ -84,8 +84,18 @@ classdef StimulationExperiment < Experiment
             loc = ((StimParam.location(2)*E.S.O.n(1))>x(:,1) & x(:,1)>(StimParam.location(1)*E.S.O.n(1)));
             
             % Determine point in burst cycle
-            tb = rem(t-(StimParam.delay*1000),(1./StimParam.frequency).*1000); % Time in burst
-            if tb < StimParam.pulsewidth % Within the active pulse window
+            tb = rem(t-(StimParam.delay*1000),(1./StimParam.frequency).*1000)+1; % Time in burst
+            
+            % Return no current if there is not enough time left in the
+            % Stimulation duration to fit another (full) pulse
+            if ((((StimParam.duration+StimParam.delay).*1000) - t) < floor(StimParam.pulsewidth - tb))
+                current = 0.*x(:,1); 
+                warning('A non-integer number of pulses was detected for this input. The last (partial) pulse will not be delivered')
+                return 
+            end
+            
+            % Determine pulse output
+            if tb <= StimParam.pulsewidth % Within the active pulse window
                 current = loc .* StimParam.magnitude;
             else
                 current = 0.*x(:,1);
@@ -93,7 +103,7 @@ classdef StimulationExperiment < Experiment
             
         end
         
-        function StimParams = ExpandInputs(E)
+        function [StimParams,IsValid] = ExpandInputs(E)
             % Take E.param (which may have multiple frequencies, durations,
             % etc. and convert to structure array for each combination of
             % frequency, duration, etc.

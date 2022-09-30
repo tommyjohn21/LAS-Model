@@ -44,6 +44,10 @@ function ExecuteSimulations(SE,input)
         % Initialize output structures
         detector = []; % Empty detector for concatenation
         seed = []; % Empty seed container for concatenation
+        if S.param.flags.realtimeSTDP
+            dW = []; % Empty dW container for concatenation
+        end
+        
         
         % Skip Simulation if already performed
         FileName = sprintf([SE.param.expdir 'StimulationExperiment-Input-'...
@@ -57,12 +61,14 @@ function ExecuteSimulations(SE,input)
             Run(S)
             detector = [detector S.detector]; % Append detector from each simulation
             seed = [seed S.seed]; % Retain seeds used in each simulation
+            if S.param.flags.realtimeSTDP, dW =  cat(3,dW,S.O.Proj.Out(1).STDP.W); end % Record dW matrix if realtimeSTDP enabled
             Reset(S)
         end
         
         % Append completed results
         SE.S.detector = detector;
         SE.S.seed = seed;
+        if S.param.flags.realtimeSTDP, SE.S.O.Proj.Out(1).STDP.W = dW; end
         
         % Save Stimulation settings
         SE.S.param.input.Stimulation = input;

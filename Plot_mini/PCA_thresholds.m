@@ -81,5 +81,41 @@ cbr = colorbar;
 caxis([5 20])
 cbr.Label.String = 'Seizure threshold (pA)';
 
+%% Plot first 2 PCA components
+f = figure; imagesc(PE.pca.s(:,:,1)); a = gca; a.XLabel.String = 'Neuron index'; a.YLabel.String = 'Neuron index'; a.FontSize = 18; axis square; cb = colorbar; cb.Label.String = 'Weights (au)'
+a.Title.String = 'Component 1';
+saveas(f,['~/Desktop/c1.svg'])
+f = figure; imagesc(PE.pca.s(:,:,2)); a = gca; a.XLabel.String = 'Neuron index'; a.YLabel.String = 'Neuron index'; a.FontSize = 18; axis square; cb = colorbar; cb.Label.String = 'Weights (au)'
+a.Title.String = 'Component 2';
+saveas(f,['~/Desktop/c2.svg'])
 
+%% Plot 2 dW matrices and their location in PCA space
+% i = find(t==min(t));
+i = find(abs(t-10) == min(abs(t-10)));
+f = figure;
+a = gca;
+imagesc(a,1:500,1:500,PE.Retrieve(i));
+axis square
+title(['dW matrix ' num2str(ExpNums(i))]);
+a.XLabel.String = 'Neuron index';
+a.YLabel.String = 'Neuron index';
+a.FontSize = 18;
+c = colorbar;
+%     caxis([0.7 1.3]);
+c.Label.String = 'dW (au)';
+saveas(f,sprintf(['~/Desktop/dW%i.svg'],ExpNums(i)))
 
+% i = find(t==max(t));
+i = find(abs(t-17) == min(abs(t-17)))
+f = figure;
+a = gca;
+imagesc(a,1:500,1:500,PE.Retrieve(i));
+axis square
+title(['dW matrix ' num2str(ExpNums(i))]);
+a.XLabel.String = 'Neuron index';
+a.YLabel.String = 'Neuron index';
+a.FontSize = 18;
+c = colorbar;
+%     caxis([0.7 1.3]);
+c.Label.String = 'dW (au)';
+saveas(f,sprintf(['~/Desktop/dW%i.svg'],ExpNums(i)))
