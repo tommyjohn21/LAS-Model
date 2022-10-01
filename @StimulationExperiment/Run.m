@@ -24,7 +24,7 @@ if ~exist(E.param.expdir,'dir'), mkdir(E.param.expdir); end
 
 %%% Conditional parallel computation %%%
 % Grand data concatenation for passage in parfor
-inputs = ExpandInputs(E);
+if ~E.param.flags.SpecifyInputs, inputs = ExpandInputs(E); else, inputs = E.param.inputs; end;
 SE = cellfun(@(x)copy(E),num2cell(1:numel(inputs)),'un',0);
 if E.param.server || E.param.flags.parallel
     parfor (i = 1:numel(inputs)), ExecuteSimulations(SE{i},inputs(i)); end

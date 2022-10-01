@@ -34,7 +34,7 @@ j = i(randperm(numel(i)));
 j = j(1:10);
 
 % For posterity
-% j = [268   224   424   811   754   588   678   100   853   130];
+assert(all(j == [268   224   424   811   754   588   678   100   853   130]),'Something is amiss stimulation selection!');
 
 %% Implement stimulation in experiment
 
@@ -46,16 +46,13 @@ VarDir = 'StimulationExperiment';
 E.UpdateDir(VarDir)
 
 % Adjust parameters
-E.param.n = 2; % Number of trials at each stimulation level
+E.param.n = 20;
 
 % Input to screen
-input = SE.S(j(1)).param.input.Stimulation; % Use j=1 for initial set up
+inputs = cellfun(@(i)SE.S(j(i)).param.input.Stimulation,num2cell(1:numel(j))); % Use j=1 for initial set up
 
 % Set inputs for experiment
-E.param.inputs.frequency = input.frequency;
-E.param.inputs.duration = input.duration; % 3 s is used for default model
-E.param.inputs.magnitude = input.magnitude; % 200 pA is used for default model
-E.param.inputs.pulsewidth = input.pulsewidth;
+E.param.inputs = inputs;
 
 % Prepare Simulation apparatus
 S = Simulation('DefaultSimulationParameters'); % Generate container for Simulation

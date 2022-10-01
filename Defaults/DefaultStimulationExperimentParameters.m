@@ -12,8 +12,10 @@ inputs = struct(...                 % Structure for Stimulation parameters
 
 % Flags                            
 flags = struct(...
-    'parallel',false...     % Force use of parfor loops even if not on server
-    );
+    'parallel',false,...            % Force use of parfor loops even if not on server
+    'SpecifyInputs',true...         % Set to false if you wish to provide parameter 
+    );                              %   ranges (and compute specific, valid inputs on 
+                                    %   the fly; c.f. using exact input with prespecified parameters
 
 
 
