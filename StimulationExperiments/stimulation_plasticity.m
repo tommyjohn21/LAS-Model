@@ -31,10 +31,10 @@ i = find(p==0);
 
 % Shuffle and take first 10
 j = i(randperm(numel(i)));
-j = j(1:10);
+j = j(1:25);
 
 % For posterity
-assert(all(j == [268   224   424   811   754   588   678   100   853   130]),'Something is amiss stimulation selection!');
+assert(all(j == [173   137   304   593   671   522   443   502    57   627   691    66    34   474   538   305    59   268   603   128   535   294   582   693   542]),'Something is amiss stimulation selection!');
 
 %% Implement stimulation in experiment
 
@@ -46,7 +46,7 @@ VarDir = 'StimulationExperiment';
 E.UpdateDir(VarDir)
 
 % Adjust parameters
-E.param.n = 20;
+E.param.n = 50;
 
 % Input to screen
 inputs = cellfun(@(i)SE.S(j(i)).param.input.Stimulation,num2cell(1:numel(j))); % Use j=1 for initial set up

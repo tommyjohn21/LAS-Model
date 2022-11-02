@@ -73,7 +73,7 @@ classdef StimulationExperiment < Experiment
             % Check time parameters; return nothing if outside of
             % stimulation window/stimulation location
             if t < StimParam.delay.*1000, current = 0.*x(:,1); return,
-            elseif t > (StimParam.delay.*1000 + StimParam.duration.*1000) - 1, current = 0.*x(:,1); return,
+            elseif t >= (StimParam.delay.*1000 + StimParam.duration.*1000) - 1, current = 0.*x(:,1); return,
             end 
             
             % Ensure that location of stimulation is [0.4750 0.5250]
@@ -83,9 +83,12 @@ classdef StimulationExperiment < Experiment
             % Determine active stimulation neurons
             loc = ((StimParam.location(2)*E.S.O.n(1))>x(:,1) & x(:,1)>(StimParam.location(1)*E.S.O.n(1)));
             
+            % Determine how far into stimulation
+            ts = t - (StimParam.delay.*1000) + 1;
+           
             % Determine point in burst cycle
-            tb = rem(t-(StimParam.delay*1000),(1./StimParam.frequency).*1000)+1; % Time in burst
-            
+            tb = ts - floor(floor(ts./((1./StimParam.frequency).*1000)).*(1./StimParam.frequency).*1000); % Time in burst
+                       
             % Return no current if there is not enough time left in the
             % Stimulation duration to fit another (full) pulse
             if ((((StimParam.duration+StimParam.delay).*1000) - t) < floor(StimParam.pulsewidth - tb))
@@ -95,7 +98,7 @@ classdef StimulationExperiment < Experiment
             end
             
             % Determine pulse output
-            if tb <= StimParam.pulsewidth % Within the active pulse window
+            if tb > 0 && tb <= StimParam.pulsewidth % Within the active pulse window
                 current = loc .* StimParam.magnitude;
             else
                 current = 0.*x(:,1);
