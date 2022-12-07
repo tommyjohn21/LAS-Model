@@ -19,13 +19,6 @@ function Run(E)
 % Reset simulation if needed
 if E.S.O.t>0, Reset(E.S); end
 
-% Assert that inputs are Random (i.e. not Deterministic)
-%   In this case, ThresholdExperiment is done with different levels of
-%   noise as stimulation (vs. varying duration of deterministic
-%   stimulation)
-assert(strcmp(E.param.inputs.type,'Random'),['You have only written for '...
-    'detection of threshold in response to noise.'])
-
 % Create ExpDir if doesn't exist
 if ~exist(E.param.expdir,'dir'), mkdir(E.param.expdir); end
 
