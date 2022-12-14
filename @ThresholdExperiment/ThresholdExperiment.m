@@ -142,6 +142,10 @@ classdef ThresholdExperiment < Experiment
         
         function threshold = Threshold(E)
             
+            % This code is not debugged for deterministic inputs
+            assert(all(arrayfun(@(x)strcmp(x{1}.type,'Random'),{E.param.inputs})),...
+                ['The below threshold calculations are NOT debugged yet for Deterministic inputs'])
+            
             % Pull raw data for sigmoid fitting
             x = arrayfun(@(s)s.param.input.Random.sigma,E.S); % Stimulation inputs used
             p = arrayfun(@(s)sum([s.detector.Seizure]),E.S)./... % Total seizures...

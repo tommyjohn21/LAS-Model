@@ -51,12 +51,12 @@ function ExecuteSimulations(TE,i)
         seed = []; % Empty seed container for concatenation
         
         % Skip Simulation if already performed
-        FileName = sprintf([param.expdir 'ThresholdExperiment-Level-%0.1f.mat'],level);
+        FileName = sprintf([param.expdir 'ThresholdExperiment-Level-%0.3f.mat'],level);
         if exist(FileName,'file'), return, end
         
         % Run simulations
         for j = 1:param.n
-            fprintf('Level %0.1f, simulation %i of %i\n',level,j,param.n)
+            fprintf('Level %0.3f, simulation %i of %i\n',level,j,param.n)
             Run(S)
             detector = [detector S.detector]; % Append detector from each simulation
             seed = [seed S.seed]; % Retain seeds used in each simulation
