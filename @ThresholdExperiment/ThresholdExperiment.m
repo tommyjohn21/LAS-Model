@@ -80,12 +80,25 @@ classdef ThresholdExperiment < Experiment
             parse(p,E,varargin{:});
             h = p.Results.h;
             
-            % Assert all threshold testing uses random stimuli
-            assert(all(arrayfun(@(x)strcmp(x{1}.type,'Random'),{E.param.inputs})),...
-                'Plot function is only written for ThresholdExperiments with Random inputs!')
+            % Parse input time for plotting
+            InputType = unique(cellfun(@(x)x.type,{E.param.inputs},'un',0));
+            InputType = InputType{1};
+            
+            switch InputType
+                case 'Deterministic'
+                    inputs = arrayfun(@(x)x.param.input.Deterministic.duration,E.S);
+                    xstring = 'Stimulus duration (s)';
+                case 'Random'
+                    % Assert all threshold testing uses deterministic stimuli
+                    assert(all(arrayfun(@(x)strcmp(x{1}.type,'Deterministic'),{E.param.inputs})),...
+                        ['Plot function has been rewritten for Deterministic inputs. '...
+                        'The next lines of code should still pull out inputs appropriately, but step '...
+                        'through it once to make sure.'])
+                    inputs = arrayfun(@(x)x.param.input.Random.sigma,E.S);
+                    xstring = 'Noise level (\sigma_S, pA)';
+            end
             
             % Parse data for plotting
-            inputs = arrayfun(@(x)x.param.input.Random.sigma,E.S);
             UniqueInputs = unique(inputs);
             
             % Pull trials, compute success (s) and total number of trials
@@ -113,7 +126,7 @@ classdef ThresholdExperiment < Experiment
             % Plot titles/labels
             title('Probability of seizure')
             ylabel('Probability')
-            xlabel('Noise level (\sigma_S, pA)')
+            xlabel(xstring)
     
             % Basic Formatting
             ax.YLim = [0 1]; % Plot probability between 0 and 1

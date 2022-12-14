@@ -18,7 +18,7 @@ E.UpdateDir(VarDir);
 
 % Adjust tested input levels as desired
 E.param.inputs.type = 'Deterministic';
-E.param.inputs.levels = 0:0.1:1;
+E.param.inputs.levels = [0:0.025:0.5 0.5:0.1:1];
 
 %% Simulation preliminaries
 % Generate container for Simulation
@@ -33,3 +33,20 @@ E.S = S;
 %% Run ThresholdExperiment
 
 Run(E)
+return % kill script after run (don't run the code that follows by default)
+
+%% Load results
+
+% Updated variable directory for ThresholdExperiments
+VarDir = 'ThresholdExperiment';
+
+% Directory for specific experiment
+ExpName = 'naive_to_stimulation';
+
+% Create/update ThresholdExperiment
+E = ThresholdExperiment(ExpName);
+E.UpdateDir(VarDir);
+
+% Load
+Load(E)
+
