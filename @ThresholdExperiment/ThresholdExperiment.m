@@ -68,6 +68,8 @@ classdef ThresholdExperiment < Experiment
                 h = figure('visible','off'); 
                 varargin = [{h} varargin];
                 FigureHandles = cellfun(@(x)isa(x,'matlab.ui.Figure'),varargin);
+            else
+                warning('Figure handle provided. Note that existing axes will be overwritten by convention.')
             end
             varargin = [varargin(FigureHandles) varargin(~FigureHandles)];
             
@@ -90,10 +92,10 @@ classdef ThresholdExperiment < Experiment
                     xstring = 'Stimulus duration (s)';
                 case 'Random'
                     % Assert all threshold testing uses deterministic stimuli
-                    assert(all(arrayfun(@(x)strcmp(x{1}.type,'Deterministic'),{E.param.inputs})),...
-                        ['Plot function has been rewritten for Deterministic inputs. '...
-                        'The next lines of code should still pull out inputs appropriately, but step '...
-                        'through it once to make sure.'])
+                    % assert(all(arrayfun(@(x)strcmp(x{1}.type,'Deterministic'),{E.param.inputs})),...
+                    %    ['Plot function has been rewritten for Deterministic inputs. '...
+                    %    'The next lines of code should still pull out inputs appropriately, but step '...
+                    %    'through it once to make sure.'])
                     inputs = arrayfun(@(x)x.param.input.Random.sigma,E.S);
                     xstring = 'Noise level (\sigma_S, pA)';
             end
@@ -109,17 +111,17 @@ classdef ThresholdExperiment < Experiment
                 s = [s sum(trials)];
                 n = [n numel(trials)];
             end
-            p = s./n; % Percent of seizures
+            pr = s./n; % Percent of seizures
                         
             % Plot in figure
             delete(findobj(h,'type','axes')) % Delete any existing axes
             ax = axes(h);
-            plot(UniqueInputs,p,'o','MarkerEdgeColor','k'); 
+            plot(UniqueInputs,pr,'o','MarkerEdgeColor','k'); 
             hold on
 
             % Fit sigmoid
             sig = @(x) (1 + exp(-(UniqueInputs-x(1))./x(2))).^(-1);
-            ofn = @(x) sum((sig(x)-p).^2);
+            ofn = @(x) sum((sig(x)-pr).^2);
             fit = fminsearch(ofn,[1.5,1]);
             plot(UniqueInputs,sig(fit),'LineWidth',2);
             
