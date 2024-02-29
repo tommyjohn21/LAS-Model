@@ -20,7 +20,9 @@ classdef PlasticityExperiment < Experiment
                                 %   has STDP enabled; this is to be used as a 
                                 %   catch for further development if other 
                                 %   Projections (e.g. inhibitory) have STDP enabled)
-                                
+        
+        dWave                   %   Average dW matrix across *unrotated* and *rotated* updated weighting matrices
+        
         pca = struct(...        %   Structure to hold results of PCA across weighting matrices
             'c',[],...          %       c: coeff matrices (see pca documentation: help pca)
             's',[],...          %       s: scores
@@ -136,14 +138,8 @@ classdef PlasticityExperiment < Experiment
             assert(E.parsed,'PlasticityExperiment must be parsed to retrieve dW (e.g. Parse(E))')
             assert(all(sum(E.pca.c(:,1:2)>0)./size(E.pca.c,1) == [0.5 1]),'1st PCA axis must change sign on rotation, and 2nd PCA axis must not. Consider if 1st and 2nd PCA componenets are reversed')
             
-            % Patch to retain earlier nomenclature of rotated matrices
-            if floor(i./numel(E.S)) == 1
-                warning('%d matrices were provided, and matrix %d was requested. Returning matrix %d with rotation applied if requested (default: rotate on).',numel(E.S),i,rem(i,numel(E.S)))
-                assert(E.pca.c(i,1)>0); % Check that you are flipping over the right axes
-                i = rem(i,numel(E.S));
-                assert(E.pca.c(i,1)<0); % Check that you are flipping over the right axes
-            end
-            if floor(i./numel(E.S)) ~= 0; error('Matrix %d is out of range 1:%d and cannot be retrieved',i,numel(E.S)); end
+            % Error if requested matrix does not exist
+            if floor((i-1)./numel(E.S)) ~= 0; error('Matrix %d is out of range 1:%d and cannot be retrieved',i,numel(E.S)); end
             
             % Retrieve and rotate matrix if needed
             dW = E.S(i).O.Proj.In(1).STDP.W;

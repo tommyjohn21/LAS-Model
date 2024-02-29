@@ -44,8 +44,9 @@ fprintf('(2/3) Performing PCA...')
 [c,s,l]=pca(B);
 fprintf('done\n')
 
-% Save PCA to Experiment object
+% Save dWave and PCA to Experiment object
 fprintf('(3/3) Saving output...')
+E.dWave = mean(W,3);
 E.pca.c = c;
 E.pca.s = reshape(s,size(W));
 E.pca.l = l;
