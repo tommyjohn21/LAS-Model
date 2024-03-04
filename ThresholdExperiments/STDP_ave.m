@@ -30,7 +30,7 @@ E = ThresholdExperiment(ExpName); % Create/update ThresholdExperiment
 E.UpdateDir(VarDir);
 
 % Update ThresholdExperiment settings
-E.param.inputs.levels = 5:2.5:20; % Adjust tested input levels as desired
+E.param.inputs.levels = 5:2.5:30; % Adjust tested input levels as desired
 
 %%% Simulation preliminaries
 % Generate container for Simulation
