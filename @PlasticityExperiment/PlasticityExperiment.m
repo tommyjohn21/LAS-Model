@@ -22,6 +22,8 @@ classdef PlasticityExperiment < Experiment
                                 %   Projections (e.g. inhibitory) have STDP enabled)
         
         dWave                   %   Average dW matrix across *unrotated* and *rotated* updated weighting matrices
+
+        Wn                      %   Naive (typically Gaussian) weighting matrix
         
         pca = struct(...        %   Structure to hold results of PCA across weighting matrices
             'c',[],...          %       c: coeff matrices (see pca documentation: help pca)
@@ -154,7 +156,7 @@ classdef PlasticityExperiment < Experiment
         end
         
         % Function to return first two pca coordinates for plotting
-        % (rotated as apporpriate)
+        % (rotated as appropriate)
         function coordinates = Coord(E,varargin)
             
             % Assertions (taken from Retrieve function)
@@ -172,6 +174,46 @@ classdef PlasticityExperiment < Experiment
                 coordinates = coordinates(varargin{1},:);
             end
             
+        end
+
+        % Function to reconstruct matrices after multiplication by Wn
+        %%% This will allow you to return the dW matrix of an arbitrary PCA
+        %%% coordinate for threshold testing
+        %%% Note: the number of PCA components used for reconstruction is
+        %%% implicitly included in the size of the coords column vector
+
+        function dWrecon = Reconstruct(E,coords)
+            % Assert E is Parsed to use correct coordinate space/PCA
+            % components
+            assert(E.parsed,'PlasticityExperiment must be parsed to retrieve dW (e.g. Parse(E))')
+            assert(size(coords,2)==1,'Input ''coords'' must be a column vector (size n x 1)')
+            
+            % Recreate column vectors of PCA components
+            s = reshape(E.pca.s,[size(E.pca.s,1).*size(E.pca.s,2) size(E.pca.s,3)]);
+            
+            % Trim PCA component vectors to use only the number of
+            % coordinates specified by coords vector
+            n = numel(coords);
+            sTrim = s(:,1:n);
+    
+            % Trimmed reconstruction
+            dWrecon = sTrim*coords;
+            
+            % Reshape dWrecon to appropriate dimensions
+            dWrecon = reshape(dWrecon,size(E.pca.s,1),size(E.pca.s,2));
+
+            % Compute dWrecon from PCA space according to: dW = (W-1).*Wn
+            dWrecon = dWrecon./E.Wn;
+            
+            %%% Set infinite components (where Wn == 0) to zero
+            %%%     These will not affect the final weighting matrix anyway,
+            %%%     since dWrecon will ultimately be multiplied by Wn prior to
+            %%%     Simulation
+            dWrecon(isinf(dWrecon)) = 0; 
+
+            %%% Add back unity per formula
+            dWrecon = dWrecon + 1;
+
         end
         
         
