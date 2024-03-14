@@ -1,7 +1,7 @@
 %%% Now that you have validated the PlasticityExperiment/Reconstruct
 %%% technique in STDP_recon_validation, you are ready to Reconstruct
 %%% arbitray combinations of PCA components and Simulate their thresholds.
-%%% The approach is to generate random combinations of [c1;c2] matrices by
+%%% The approach is to generate combinations of [c1;c2] matrices by
 %%% drawing from PCA space. You'll then Reconstruct the associated dW
 %%% matrices and compute thresholds.
 
@@ -113,7 +113,7 @@ for i = start:increment:size(c,1)
 
     %%% ThresholdExperiment preliminaries
     % Directories for saving
-    VarDir = 'ThresholdExperiment/STDP_recon_random'; % Updated variable directory for ThresholdExperiments
+    VarDir = 'ThresholdExperiment/STDP_recon_grid'; % Updated variable directory for ThresholdExperiments
     
     % Directory for specific experiment
     ExpName = sprintf('ReconRandom-%0.3f-%0.3f',c(i,1),c(i,2));
