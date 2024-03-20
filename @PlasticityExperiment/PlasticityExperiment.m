@@ -28,7 +28,8 @@ classdef PlasticityExperiment < Experiment
         pca = struct(...        %   Structure to hold results of PCA across weighting matrices
             'c',[],...          %       c: coeff matrices (see pca documentation: help pca)
             's',[],...          %       s: scores
-            'l',[]...           %       l: latent
+            'l',[],...          %       l: latent
+            'mu',[]...          %      mu: mean substracted off prior to PCA decomposition
         );
         
     end
@@ -129,44 +130,27 @@ classdef PlasticityExperiment < Experiment
         % PlasticityExperiment
         function dW = Retrieve(E,i,varargin)
             
-            % Rotation flag
-            rotate = true;
-            if numel(varargin)>0
-               rotate = varargin{1}; % Pass boolean false into varargin for non-rotated matrices
-            end
-            
             % Assertions
             assert(E.StandardSTDP,'Code is only written for StandardRecurrentConnection configuration')
             assert(E.parsed,'PlasticityExperiment must be parsed to retrieve dW (e.g. Parse(E))')
-            assert(all(sum(E.pca.c(:,1:2)>0)./size(E.pca.c,1) == [0.5 1]),'1st PCA axis must change sign on rotation, and 2nd PCA axis must not. Consider if 1st and 2nd PCA componenets are reversed')
             
             % Error if requested matrix does not exist
             if floor((i-1)./numel(E.S)) ~= 0; error('Matrix %d is out of range 1:%d and cannot be retrieved',i,numel(E.S)); end
             
             % Retrieve and rotate matrix if needed
             dW = E.S(i).O.Proj.In(1).STDP.W;
-            if E.pca.c(i,1)<0
-                if rotate % Enabled by default
-                    dW = rot90(dW,2);
-                else
-                    warning('Rotation is warranted by not applied. Rotate flag set to false.')
-                end
-            end
 
         end
         
-        % Function to return first two pca coordinates for plotting
-        % (rotated as appropriate)
+        % Function to return first three pca coordinates for plotting
         function coordinates = Coord(E,varargin)
             
             % Assertions (taken from Retrieve function)
             assert(E.StandardSTDP,'Code is only written for StandardRecurrentConnection configuration')
             assert(E.parsed,'PlasticityExperiment must be parsed to retrieve dW (e.g. Parse(E))')
-            assert(all(sum(E.pca.c(:,1:2)>0)./size(E.pca.c,1) == [0.5 1]),'1st PCA axis must change sign on rotation, and 2nd PCA axis must not. Consider if 1st and 2nd PCA componenets are reversed')
-            
-            % Pull (sign-corrected, i.e. rotated) coordinates
-            coordinates = abs(E.pca.c(:,1:2)); % Return sign-corrected entries
-            coordinates = coordinates(1:numel(E.S),:); % Return the first 1:N (i.e. number of Simulations)
+
+            % Pull coordinates
+            coordinates = E.pca.s(:,1:3);
             
             if ~isempty(varargin)
                 % Use varargin for specific coordinates
@@ -189,18 +173,18 @@ classdef PlasticityExperiment < Experiment
             assert(size(coords,2)==1,'Input ''coords'' must be a column vector (size n x 1)')
             
             % Recreate column vectors of PCA components
-            s = reshape(E.pca.s,[size(E.pca.s,1).*size(E.pca.s,2) size(E.pca.s,3)]);
+            c = reshape(E.pca.c,[size(E.pca.c,1).*size(E.pca.c,2) size(E.pca.c,3)]);
             
             % Trim PCA component vectors to use only the number of
             % coordinates specified by coords vector
             n = numel(coords);
-            sTrim = s(:,1:n);
+            cTrim = c(:,1:n);
     
             % Trimmed reconstruction
-            dWrecon = sTrim*coords;
+            dWrecon = cTrim*coords + E.pca.mu.';
             
             % Reshape dWrecon to appropriate dimensions
-            dWrecon = reshape(dWrecon,size(E.pca.s,1),size(E.pca.s,2));
+            dWrecon = reshape(dWrecon,size(E.pca.c,1),size(E.pca.c,2));
 
             % Compute dWrecon from PCA space according to: dW = (W-1).*Wn
             dWrecon = dWrecon./E.Wn;
@@ -209,7 +193,7 @@ classdef PlasticityExperiment < Experiment
             %%%     These will not affect the final weighting matrix anyway,
             %%%     since dWrecon will ultimately be multiplied by Wn prior to
             %%%     Simulation
-            dWrecon(isinf(dWrecon)) = 0; 
+            dWrecon(isnan(dWrecon)) = 0; 
 
             %%% Add back unity per formula
             dWrecon = dWrecon + 1;

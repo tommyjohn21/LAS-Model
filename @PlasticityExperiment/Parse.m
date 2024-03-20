@@ -25,11 +25,7 @@ end
 
 % Pull all STDP matrices for concatenation
 W = arrayfun(@(x)x.O.Proj.In(1).STDP.W,E.S,'UniformOutput',false);
-D = cat(3,W{:}); % Concatenate all matrices WITHOUT reflection
-
-% Rotate and concatenate (i.e. employ symmetry embedded in model)
 fprintf('(1/3) Concatenating STDP matrices...')
-W = [W cellfun(@(w)rot90(w,2),W,'un',0)];
 W = cat(3,W{:});
 fprintf('done\n')
 
@@ -42,16 +38,17 @@ B = reshape(A,[size(A,1).*size(A,2) size(A,3)]); % Reshape to columns
 
 % Perform PCA on variance-normalized data
 fprintf('(2/3) Performing PCA...')
-[c,s,l]=pca(B);
+[c,s,l,~,~,mu]=pca(B.');
 fprintf('done\n')
 
 % Save dWave and PCA to Experiment object
 fprintf('(3/3) Saving output...')
-E.dWave = mean(D,3);
+E.dWave = mean(W,3);
 E.Wn = full(Wn);
-E.pca.c = c;
-E.pca.s = reshape(s,size(W));
+E.pca.c = reshape(c,size(W) - [0 0 1]);
+E.pca.s = s;
 E.pca.l = l;
+E.pca.mu = mu;
 fprintf('done\n')
 
 % Tag data as parsed

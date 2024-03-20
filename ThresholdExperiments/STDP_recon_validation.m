@@ -71,8 +71,9 @@ for i = start:increment:numel(key)
     S = Simulation('DefaultSimulationParameters');
 
     % Generate your reconstructed matrix
-    c = PE.Coord(n).'; % Retrieve first two PCA components of dW_n
-    S.param.dW = PE.Reconstruct(c); % Reconstruct the dW matrix
+    s = PE.Coord(n).'; % Retrieve first three PCA components of dW_n
+    s = s(1:2); % Use only the first two components
+    S.param.dW = PE.Reconstruct(s); % Reconstruct the dW matrix
 
     % Prepare Simulation
     Prepare(S);
