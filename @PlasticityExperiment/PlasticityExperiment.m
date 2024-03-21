@@ -193,7 +193,7 @@ classdef PlasticityExperiment < Experiment
             %%%     These will not affect the final weighting matrix anyway,
             %%%     since dWrecon will ultimately be multiplied by Wn prior to
             %%%     Simulation
-            dWrecon(isnan(dWrecon)) = 0; 
+            dWrecon(isnan(dWrecon)|isinf(dWrecon)) = 0; 
 
             %%% Add back unity per formula
             dWrecon = dWrecon + 1;
