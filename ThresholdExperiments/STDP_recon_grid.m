@@ -58,47 +58,40 @@ ExpNums = ExpNums(idx);
 % Extract thresholds
 thresholds = arrayfun(@(te)Threshold(te),TE);
 
-%%% Best fit threshold plane
+%%% Best fit threshold surface
 % Pair down coordinates to only those with defined threshold values
-[cX,cY] = deal(coords(ExpNums,1),coords(ExpNums,2));
+[sX,sY,sZ] = deal(coords(ExpNums,1),coords(ExpNums,2),coords(ExpNums,3));
 
 % Define a linear plane fit
-f = fittype('poly11');
+f = fittype( 'a+b*x^2+c*y', 'independent', {'x', 'y'}, 'dependent', 'z' );
 
 % Curve-fitting
-[F,gof] = fit([cX,cY],thresholds,f);
+[F,gof] = fit([sX,sY],thresholds,f);
 
 %%% Meshgrid for prediction sites
-[mX,mY] = meshgrid([0:0.01:0.07],[0:0.01:0.07]);
+[mX,mY] = meshgrid([-0.65:0.1625:0.65],[-0.4:0.075:0.4]);
 
 % Predicted thresholds
 mZ = F(mX,mY);
 
 % Heuristic to find the points you'd like
 %   This is purely arbitrary; see commented code below
-cutoff = 12.9;
-[c1,c2] = deal(mX(mZ(:)>cutoff),mY(mZ(:)>cutoff));
-assert(sum(mZ(:)>cutoff)==24,'Likely a new plane fit has changed your heuristic cutoff. Use the visualization code below to examine how many points your heuristic is sampling')
-
-% Discard the origin, since this will likely be part of your
-% STDP_recon_validation.m
-origin = find(c1 == 0 & c2 == 0);
-c1(origin) = [];
-c2(origin) = [];
+valid = mZ>0 & mZ>5 & mY<=-0.1 & mY>=-0.25;
+assert(sum(valid(:))==25,'You not sampling 25 points in your grid. Please inspect your valid heuristic.')
+[s1,s2] = deal(mX(valid),mY(valid));
 
 % Code to visualize the heuristic
 %{
 figure
 contour(mX,mY,mZ,0:5:30,'ShowText','on')
-xlim([0 0.07])
-ylim([0 0.07])
+valid = mZ>0 & mZ>5 & mY<=-0.1 & mY>=-0.25;
 axis square
 hold on
-scatter(mX(mZ>12.9),mY(mZ>12.9),'o')
+scatter(mX(valid),mY(valid),'o')
 %}
 
 % Compute coordinate matrix to fold into ThresholdExperiment code below
-c = [c1 c2];
+s = [s1 s2];
 
 %% Give starting index and increment to run on 2 nodes (if needed)
 start = 1;
@@ -106,7 +99,7 @@ increment = 1;
 
 %% Cycle through ThresholdExperiments for Reconstructed weighting matrices given in key
 
-for i = start:increment:size(c,1)
+for i = start:increment:size(s,1)
 
     % Choose particular weighting matrix
     fprintf(['Loop %i\n'],i) % For logging purposes on server
@@ -116,22 +109,22 @@ for i = start:increment:size(c,1)
     VarDir = 'ThresholdExperiment/STDP_recon_grid'; % Updated variable directory for ThresholdExperiments
     
     % Directory for specific experiment
-    ExpName = sprintf('ReconRandom-%0.3f-%0.3f',c(i,1),c(i,2));
+    ExpName = sprintf('ReconRandom_%0.3f_%0.3f',s(i,1),s(i,2));
 
     % Generate container for ThresholdExperiment
     E = ThresholdExperiment(ExpName); % Create/update ThresholdExperiment
     E.UpdateDir(VarDir);
 
     % Update ThresholdExperiment settings
-    E.param.inputs.levels = 5:2.5:20; % Adjust tested input levels as desired
+    E.param.inputs.levels = 5:2.5:30; % Adjust tested input levels as desired
 
     %%% Simulation preliminaries
     % Generate container for Simulation
     S = Simulation('DefaultSimulationParameters');
 
     % Generate your reconstructed matrix
-    ci = c(i,:).'; % Use arbitrary grid site defined earlier
-    S.param.dW = PE.Reconstruct(ci); % Reconstruct the dW matrix
+    si = s(i,:).'; % Use arbitrary grid site defined earlier
+    S.param.dW = PE.Reconstruct(si); % Reconstruct the dW matrix
 
     % Prepare Simulation
     Prepare(S);

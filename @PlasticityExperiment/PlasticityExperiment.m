@@ -169,7 +169,7 @@ classdef PlasticityExperiment < Experiment
         function dWrecon = Reconstruct(E,coords)
             % Assert E is Parsed to use correct coordinate space/PCA
             % components
-            assert(E.parsed,'PlasticityExperiment must be parsed to retrieve dW (e.g. Parse(E))')
+            assert(E.parsed,'PlasticityExperiment must be parsed to Reconstruct dW (e.g. Parse(E))')
             assert(size(coords,2)==1,'Input ''coords'' must be a column vector (size n x 1)')
             
             % Recreate column vectors of PCA components
@@ -197,6 +197,28 @@ classdef PlasticityExperiment < Experiment
 
             %%% Add back unity per formula
             dWrecon = dWrecon + 1;
+
+        end
+
+        function coords = Deconstruct(E,dW)
+            % Assert E is Parsed to use correct coordinate space/PCA
+            % components
+            assert(E.parsed,'PlasticityExperiment must be parsed to Deconstruct new dW matrix (e.g. Parse(E))')
+            
+            % Convert to Wn.*(dW-1)
+            dW = (dW-1).*E.Wn;
+
+            % Center the dW matrix prior to deconstruction
+            dWcent = dW(:) - E.pca.mu.';
+
+            % Recreate column vectors of PCA components
+            c = reshape(E.pca.c,[size(E.pca.c,1).*size(E.pca.c,2) size(E.pca.c,3)]);
+            
+            % Project onto PCA space
+            s = dWcent.'*c;
+            
+            % Take only the relevant coordinates
+            coords = s(1:3);
 
         end
         
