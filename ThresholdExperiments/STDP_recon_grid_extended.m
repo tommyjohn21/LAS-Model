@@ -5,6 +5,9 @@
 %%% drawing from PCA space. You'll then Reconstruct the associated dW
 %%% matrices and compute thresholds.
 
+%%% Here, you want to see if your model extrapolates to off-grid (i.e. PAST
+%%% the point of the naive network)
+
 %% Load data from PlasticityExperiment
 % Updated variable directory for PlasticityExperiments
 PlasticityVarDir = 'PlasticityExperiment';
@@ -69,22 +72,22 @@ f = fittype( 'a+b*x^2+c*y', 'independent', {'x', 'y'}, 'dependent', 'z' );
 [F,gof] = fit([sX,sY],thresholds,f);
 
 %%% Meshgrid for prediction sites
-[mX,mY] = meshgrid([-0.65:0.1625:0.65],[-0.4:0.075:0.4]);
+[mX,mY] = meshgrid([-0.65:0.1625:0.65],[-0.475:0.075:0.4]);
 
 % Predicted thresholds
 mZ = F(mX,mY);
 
 % Heuristic to find the points you'd like
 %   This is purely arbitrary; see commented code below
-valid = mZ>0 & mZ>5 & mY<=-0.1 & mY>=-0.25;
-assert(sum(valid(:))==25,'You not sampling 25 points in your grid. Please inspect your valid heuristic.')
+valid = mZ>0 & mZ>5 & mY<-0.25;
+valid = ([(-1).^(1:size(valid,1)).'*(-1).^(1:size(valid,2)) == 1].*valid)>0;
+assert(sum(valid(:))==14,'You not sampling 14 points in your grid. Please inspect your valid heuristic.')
 [s1,s2] = deal(mX(valid),mY(valid));
 
 % Code to visualize the heuristic
 %{
 figure
 contour(mX,mY,mZ,0:5:30,'ShowText','on')
-valid = mZ>0 & mZ>5 & mY<=-0.1 & mY>=-0.25;
 axis square
 hold on
 scatter(mX(valid),mY(valid),'o')
@@ -117,7 +120,7 @@ for i = start:increment:size(s,1)
 
     % Update ThresholdExperiment settings
     E.param.inputs.levels = 5:2.5:30; % Adjust tested input levels as desired
-
+    
     %%% Simulation preliminaries
     % Generate container for Simulation
     S = Simulation('DefaultSimulationParameters');

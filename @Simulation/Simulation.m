@@ -10,10 +10,13 @@ classdef Simulation < handle & matlab.mixin.Copyable
         
         % Record DetectSeizure output
         detector = struct(...
-            'Seizure',0,...         % Boolean for seizure detected
-            'WaveCollapsed',0,...   % Boolean to determine if tonic wave collapsed (deprecated)
+            'Seizure',NaN,...       % Boolean for seizure detected
+            'WaveCollapsed',NaN,... % Boolean to determine if tonic wave collapsed (deprecated)
             'State',[],...          % State trace
-            'V',[]...               % Voltage trace
+            'V',[],...              % Voltage trace
+            'phi',[],...            % Threshold trace
+            'Cl_in',[],...          % Chloride (Cl_in) trace
+            'g_K',[]...             % g_K trace
             );
 
         % Record rng settings for Simulation
@@ -213,8 +216,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
             if nargout == 1, varargout{1} = p.Results.h; end
             
         end
-        
-        
+
     end
     
     methods (Hidden = true)
@@ -254,6 +256,32 @@ classdef Simulation < handle & matlab.mixin.Copyable
             
         end
         
+        function sp = UpdateParam(S,Sp,sp)
+
+            % Collect (updated) default parameter names
+            fn = fieldnames(Sp);
+
+            % Cycle through parameters recursively to ensure all
+            % default parameters/fields are present in the loaded data
+            for j = 1:numel(fn)
+                if ~isstruct(Sp.(fn{j}))
+                    % Add the missing field (assuming it's not a structure)
+                    if ~isfield(sp,fn{j})
+                        sp.(fn{j}) = Sp.(fn{j});
+                    end
+                else
+                    if isfield(sp,fn{j})
+                        % Dive into the sub-structure recursively
+                        sp.(fn{j}) = S.UpdateParam(Sp.(fn{j}),sp.(fn{j}));
+                    else
+                        % Wholesale add the new sub-structure
+                        warning('There is an entirely new (default?) structure in Sp that is not in sp. Please double-check that you would like to add this to sp by default.')
+                        sp.(fn{j}) = Sp.(fn{j});
+                    end
+                end
+            end
+        end
+
     end
        
     methods (Static)
@@ -263,6 +291,12 @@ classdef Simulation < handle & matlab.mixin.Copyable
             % Reconstruct Simulations
             %   Note that this does not reconstruct Voltage or State traces
             S = Simulation(s.param.SimulationTemplate);
+            
+            % Make sure you add any additional default parameters to loaded
+            % objects for backwards compatibility
+            s.param = S.UpdateParam(S.param,s.param);
+            
+            % Attach and prepare your loaded and updated parameter set
             S.param = s.param;
             Prepare(S) % Generate network as dictated in e.S.param
             
@@ -318,7 +352,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
                if numel(s.O.Enabled)>1, error('The following line is not debugged for STDP enabled for more than 1 Projection'); end
                S.O.Proj.In(s.O.Enabled).STDP.W = s.O.W{:};
             end
-            
+         
         end
         
         

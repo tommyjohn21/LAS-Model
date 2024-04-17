@@ -4,11 +4,21 @@ function DetectSeizure(S)
 % Pull out handle for network
 O = S.O;
 
-% Detect only if desired
-if ~S.param.flags.DetectSeizure, return, end
-
 % Extract voltage traces
 V = O.Recorder.Var.V(:,1:O.t);
+
+%%% Port up metrics
+% Cycle through all 'Trace' possibilities
+fn = fieldnames(S.param.flags.return);
+for i = find([cellfun(@(s)contains(s,'Trace'),fn)]).'
+    if S.param.flags.return.(fn{i}) && ~strcmp(fn{i},'StateTrace'), PortUp(S,fn{i}); end
+end
+
+% Detect only if desired
+if ~S.param.flags.DetectSeizure
+    if S.param.flags.return.StateTrace, warning('Seizure detection is disabled, but StateTrace is requested. StateTrace will not be computed.'), end
+    return
+end
 
 % Kernel for Gaussian convoluation
 g = normpdf(-4:6/1000:4,0,1); % gaussian for filtering
@@ -62,9 +72,37 @@ end
 
 % Port up metrics
 if S.param.flags.return.StateTrace, S.detector.State = state_trace; end
-if S.param.flags.return.VoltageTrace, S.detector.V = V; end
 S.detector.WaveCollapsed = sum(states(:))>0 & all(states(1,end-100:end)==0);
 S.detector.Seizure = seizure;
+
+end
+
+function PortUp(S,fs)
+   
+    % Choose appropriate metric to port up
+    switch fs
+        case 'VoltageTrace', s = 'V';
+        case 'ThresholdTrace', s = 'phi';
+        case 'ChlorideTrace', s = 'Cl_in';
+        case 'gKTrace', s = 'g_K';
+    end
+
+    % Choose which neurons to port up
+    if isnan(S.param.flags.return.Neurons)
+        N = 1:S.O.n;
+    else
+        N = S.param.flags.return.Neurons;
+    end
+
+    % Retrieve metric
+    X = S.O.Recorder.Var.(s); % Retreive appropriate data
+    if S.param.flags.return.Trim % Trim if requested
+        % Assume a sampling/simulation time step of 1 ms
+        assert(~isnan(S.param.flags.return.TrimDuration),'You may have asked to Trim and not provided a TrimDuration')
+        S.detector.(s) = X(N,end-S.param.flags.return.TrimDuration.*1000:end-1);
+    else % If not Trim, return full Trace
+        S.detector.(s) = X(N,:);
+    end
 
 end
 

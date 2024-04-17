@@ -7,5 +7,5 @@ inputs = struct(...             % Inputs to be used in each simulation
 
 % Flags                            
 flags = struct(...
-    'parallel',false...     % Force use of parfor loops even if not on server
+    'parallel',false...         % Force use of parfor loops even if not on server
     );

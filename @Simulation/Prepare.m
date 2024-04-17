@@ -39,6 +39,9 @@ end
 % Build recurrent connections
 DefaultRecurrentConnection(S.O); % output P_E for ease of adjustment
 
+% Sever connections if disconnect desired
+if S.param.flags.disconnect, Disconnect(S), end
+
 % Update weights with dW if desired
 if any(S.param.dW(:) ~= 1), UpdateWeightMatrix(S), end
 
@@ -48,6 +51,31 @@ if S.param.flags.realtimeSTDP, EnableSTDP(S), end
 % Adjust random seed if desired
 if isfield(S.param.flags,'UsePresetSeed'), AdjustSeed(S), end
     
+end
+
+%% Disconnect network
+function Disconnect(S)
+    % For easy indexing, get handle to projections
+    P = S.O.Proj.In;
+    
+    % Sever connections
+    for i = 1:numel(P)
+        if strcmp(P(i).Method,'function')
+            % Breaks the global recurrent inhibition
+            % Each neuron now only causes it's own "global" recurrent
+            % inhibition
+            P(i).W = @(x)x./prod(S.O.n);
+        elseif ~strcmp(P(i).Method,'multiplication')
+            % Change to sparse matrix notation instead of convolution
+            KernelToMultiplication(P(i));
+            % Sever
+            P(i).W = P(i).W.*eye(size(P(i).W));
+        end
+    end
+
+    % De-correlate noise inputs
+    S.param.input.Random.tau_x = 0;
+
 end
 
 %% Update weight matrix
