@@ -109,7 +109,7 @@ for i = start:increment:size(s,1)
 
     %%% ThresholdExperiment preliminaries
     % Directories for saving
-    VarDir = 'ThresholdExperiment/STDP_recon_grid'; % Updated variable directory for ThresholdExperiments
+    VarDir = 'ThresholdExperiment/STDP_recon_grid_extended'; % Updated variable directory for ThresholdExperiments
     
     % Directory for specific experiment
     ExpName = sprintf('ReconRandom_%0.3f_%0.3f',s(i,1),s(i,2));
