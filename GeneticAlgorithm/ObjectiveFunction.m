@@ -36,9 +36,7 @@ function [cost] = ObjectiveFunction(magnitudeIndex, stimIndex, senseIndex, dWave
 
     % Update ThresholdExperiment settings
     TE.param.inputs.levels = 10:2.5:30; % Adjust tested input levels as desired
-    TE.param.n = 5;
-    TE.param.flags.parallel = true;
-    warning('For the sake of development, you have decreased TE.param.n and forced parallel computation.')
+    TE.param.n = 40; % Number of simulations at each input level
 
     %% Generate and Prepare Simulation
     % Generate container for Simulation
