@@ -75,7 +75,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
             
             % Pull handle for network/recorder
             O = S.O; R = S.O.Recorder;
-            
+
             % Restore initial conditions
             O.V = R.Var.V(:,1);
             O.phi = R.Var.phi(:,1);
@@ -83,9 +83,16 @@ classdef Simulation < handle & matlab.mixin.Copyable
             O.g_K = R.Var.g_K(:,1);
             
             % Restore initial inputs
-            O.Input.E = 0;
-            O.Input.I = 0;
-            O.Ext.Random.Iz = 0;
+            O.Input.E = zeros(O.n);
+            O.Input.I = zeros(O.n);
+            for i = 1:numel(S.O.Proj.In)
+                S.O.Proj.In(i).Value = zeros(O.n);
+            end
+            
+            % Find 'default' ExternalInput (there should only be one)
+            assert(sum(cellfun(@(ud)strcmp(ud.ExternalInputType,'default'),{S.O.Ext.UserData}))==1,'More than one default ExternalInput is detected!')
+            DefaultExternalInputIndex = find(cellfun(@(ud)strcmp(ud.ExternalInputType,'default'),{S.O.Ext.UserData}));
+            O.Ext(DefaultExternalInputIndex).Random.Iz = 0;
             
             % Reset spiking-related variables
             O.S.S = false(O.n); % Logical value, decide whether there is a spike or not
@@ -145,12 +152,56 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 LevelString = 'sigma'; 
             elseif strcmp(InputType,'Deterministic')
                 LevelString = 'duration';
+            elseif contains(InputType,'Stimulator')
+                % Make sure there is only a single Stimulator
+                %%% If not, you won't know which Stimulator needs its input
+                %%% updated
+                assert(sum(cellfun(@(ud)strcmp(ud.ExternalInputType,'stimulator'),{S.O.Ext.UserData}))==1,'More than one stimulator is present. Code is not written for this scenario')
+                
+                % Find which ExternalInput has the Stimulator
+                StimulatorIndex = find(cellfun(@(ud)strcmp(ud.ExternalInputType,'stimulator'),{S.O.Ext.UserData}));
+                ExtSt = S.O.Ext(StimulatorIndex); % Pull out ExternalInput Stimulator object for easy handle reference
+
+                % Convert the ExternalInput to a Stimulator object
+                %%% This ensures validity is checked when updating
+                %%% parameters
+                St = ConvertToStimulator(S.O.Ext(StimulatorIndex));
+
+                % Update Stimulator by level
+                %%% Note this will kick back an error if stimulation
+                %%% invalid OR if InputType is not formatted as
+                %%% Stimulation.parameter (e.g. Stimulation.magnitude)
+                St.param.PulseTrainParam.(InputType(strfind(InputType,'.')+1:end)) = level;
+
+                % Convert back to ExternalInput
+                ExtSt = ConvertToExternalInput(St);
+
+                % Integrate updated ExternaInput into the Simulation
+                S.O.Ext(StimulatorIndex) = ExtSt;
+
+                % Update Simulation parameters for book-keeping
+                %%% This data is used for save/load object
+                S.param.input.Stimulator = St.param.PulseTrainParam;
+                
+                % Return script since adjustment has been made
+                return
+
             end
             
-            % Update Simulation AND Network
+            % Update Simulation AND Network. Reattach Stimulator if needed
             S.param.input.(InputType).(LevelString) = level; % Update Simulation input
+            if ~isempty(S.O.UserData), UserData = S.O.UserData; end % Save UserData field to reattach
+            StimulatorIndex = arrayfun(@(x)strcmp(x.UserData.ExternalInputType,'stimulator'),S.O.Ext); % Save Stimulators to reattach
+            StExt = [S.O.Ext(StimulatorIndex)]; % Accrue Stimulators
             Prepare(S); % Update deterministic input by regenerating network (this is a hack that likely needs a better solution)
-            
+            if exist('UserData','var'), S.O.UserData = UserData; end % Reattach UserData post Prepare
+            if ~isempty(StExt)
+                % Assert there is only a single Stimulator present
+                assert(numel(StExt)==1,'More than one stimulator is present. Code is not written for this scenario')
+                % (Re-) Attach Stimulator
+                AttachStimulator(S,ConvertToStimulator(StExt)) % This ensures you are targeting the right Network
+            end
+
         end
         
         function varargout = Plot(S,varargin)
@@ -189,6 +240,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
                     case 'phi', TitleString = 'Threshold'; UnitString = [TitleString ' (mV)'];
                     case 'Cl_in', TitleString = '[Cl]_{in}'; UnitString = [TitleString ' (mM)'];
                     case 'g_K', TitleString = 'g_K'; UnitString = [TitleString ' (nS)'];
+                    case 'I_ext', TitleString = 'I_{ext}'; UnitString = [TitleString ' (pA)'];
                 end
             end
             
@@ -215,6 +267,26 @@ classdef Simulation < handle & matlab.mixin.Copyable
             % Return figure handle as desired
             if nargout == 1, varargout{1} = p.Results.h; end
             
+        end
+
+        function AttachStimulator(S,St)
+            
+            % Kick back if Simulation not Prepared
+            assert(S.prepared, 'Simulation must be Prepared prior to AddStimulator. Try Prepare(S).')
+            
+            % Attach Stimulator parameters to the Simulation (for ability
+            % to reproduce after save/load)
+            S.param.input.Stimulator = St.param;
+
+            % Use the Target NeuralNetwork given in the Simulation
+            St.Target = S.O.Ext(1).Target;
+            
+            % Create a faux ExternalInput for concatenation of Ext and Stimulator
+            StExt = ConvertToExternalInput(St);
+                       
+            % Concatenate Ext and StExt
+            S.O.Ext = [S.O.Ext StExt];
+
         end
 
     end
@@ -351,6 +423,13 @@ classdef Simulation < handle & matlab.mixin.Copyable
                S.O.Proj.In(s.O.Enabled).STDP.Enabled = 1;
                if numel(s.O.Enabled)>1, error('The following line is not debugged for STDP enabled for more than 1 Projection'); end
                S.O.Proj.In(s.O.Enabled).STDP.W = s.O.W{:};
+            end
+
+            % Reattach Stimulator if present
+            if isfield(S.param.input,'Stimulator')
+                St = Stimulator;
+                St.param = S.param.input.Stimulator;
+                AttachStimulator(S,St);
             end
          
         end

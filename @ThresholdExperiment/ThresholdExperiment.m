@@ -86,18 +86,35 @@ classdef ThresholdExperiment < Experiment
             InputType = unique(cellfun(@(x)x.type,{E.param.inputs},'un',0));
             InputType = InputType{1};
             
-            switch InputType
-                case 'Deterministic'
-                    inputs = arrayfun(@(x)x.param.input.Deterministic.duration,E.S);
-                    xstring = 'Stimulus duration (s)';
-                case 'Random'
-                    % Assert all threshold testing uses deterministic stimuli
-                    % assert(all(arrayfun(@(x)strcmp(x{1}.type,'Deterministic'),{E.param.inputs})),...
-                    %    ['Plot function has been rewritten for Deterministic inputs. '...
-                    %    'The next lines of code should still pull out inputs appropriately, but step '...
-                    %    'through it once to make sure.'])
-                    inputs = arrayfun(@(x)x.param.input.Random.sigma,E.S);
-                    xstring = 'Noise level (\sigma_S, pA)';
+            if strcmp(InputType,'Deterministic')
+                inputs = arrayfun(@(x)x.param.input.Deterministic.duration,E.S);
+                xstring = 'Stimulus duration (s)';
+            elseif strcmp(InputType,'Random')
+                inputs = arrayfun(@(x)x.param.input.Random.sigma,E.S);
+                xstring = 'Noise level (\sigma_S, pA)';
+            elseif contains(InputType,'Stimulator')
+                
+                % Assert all threshold testing uses Stimulator.magnitude stimuli
+                assert(all(arrayfun(@(x)strcmp(x{1}.type,'Stimulator.magnitude'),{E.param.inputs})),...
+                    ['Plot function for Stimulator Experiments has been written for Stimulator.magnitude inputs. '...
+                    'The next lines of code should still pull out inputs appropriately, but step '...
+                    'through it once to make sure.'])
+                inputs = arrayfun(@(x)x.param.input.Stimulator.(InputType(strfind(InputType,'.')+1:end)),E.S);
+                
+                % Find stimulator parameter that varies across Simulations
+                xstring = [upper(InputType(strfind(InputType,'.')+1:strfind(InputType,'.')+1)) InputType(strfind(InputType,'.')+2:end)];
+                
+                % Concatenate units to xstring
+                switch xstring
+                    case 'Magnitude'
+                        xstring = [xstring ' (pA)'];
+                    otherwise
+                        error('No units have been written for the chosen InputType')
+                end
+                xstring = ['Stimulator ' xstring];
+
+            else
+                error('No such InputType exists for Plotting')
             end
             
             % Parse data for plotting
@@ -144,12 +161,15 @@ classdef ThresholdExperiment < Experiment
         
         function threshold = Threshold(E)
             
-            % This code is not debugged for deterministic inputs
-            assert(all(arrayfun(@(x)strcmp(x{1}.type,'Random'),{E.param.inputs})),...
-                ['The below threshold calculations are NOT debugged yet for Deterministic inputs'])
-            
             % Pull raw data for sigmoid fitting
-            x = arrayfun(@(s)s.param.input.Random.sigma,E.S); % Stimulation inputs used
+            switch E.param(1).inputs.type
+                case 'Deterministic'
+                    varString = 'duration';
+                case 'Random'
+                    varString = 'sigma';
+            end
+
+            x = arrayfun(@(s)s.param.input.(E.param(1).inputs.type).(varString),E.S); % Stimulation inputs used
             p = arrayfun(@(s)sum([s.detector.Seizure]),E.S)./... % Total seizures...
                 arrayfun(@(s)numel([s.detector.Seizure]),E.S); % divided by Total trials
             

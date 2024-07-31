@@ -76,12 +76,19 @@ classdef StimulationExperiment < Experiment
             elseif t >= (StimParam.delay.*1000 + StimParam.duration.*1000) - 1, current = 0.*x(:,1); return,
             end 
             
-            % Ensure that location of stimulation is [0.4750 0.5250]
-            assert(all(StimParam.location == [0.4750 0.5250]),...
-                'Non-default stimulus location is used! Function ExpandInputs(E) is not debugged for this scenario--please debug.')
-            
+            % If phaseType of biphasic, include pulse modifier to double
+            % pulse width
+            assert(ismember(StimParam.phaseType,{'biphasic','monophasic'}),'Only biphasic and monophasic phaseTypes are allowed')
+            pulseModifier = 1; % pulseModifier under the assumption of monophasic stimulation
+            if strcmp(StimParam.phaseType,'biphasic'), pulseModifier = 2; end
+
             % Determine active stimulation neurons
-            loc = ((StimParam.location(2)*E.S.O.n(1))>x(:,1) & x(:,1)>(StimParam.location(1)*E.S.O.n(1)));
+            %%% This is set up to use each row of StimParam.location as
+            %%% defining a set of stimulated neurons
+            loc = zeros(E.S.O.n);
+            for i = 1:size(StimParam.location,1)
+                loc = loc | ((StimParam.location(i,2)*E.S.O.n(1))>x(:,1) & x(:,1)>(StimParam.location(i,1)*E.S.O.n(1)));
+            end
             
             % Determine how far into stimulation
             ts = t - (StimParam.delay.*1000) + 1;
@@ -91,15 +98,21 @@ classdef StimulationExperiment < Experiment
                        
             % Return no current if there is not enough time left in the
             % Stimulation duration to fit another (full) pulse
-            if ((((StimParam.duration+StimParam.delay).*1000) - t) < floor(StimParam.pulsewidth - tb))
+            if ((((StimParam.duration+StimParam.delay).*1000) - t) < floor(StimParam.pulsewidth*pulseModifier - tb))
                 current = 0.*x(:,1); 
                 warning('A non-integer number of pulses was detected for this input. The last (partial) pulse will not be delivered')
                 return 
             end
             
             % Determine pulse output
-            if tb > 0 && tb <= StimParam.pulsewidth % Within the active pulse window
-                current = loc .* StimParam.magnitude;
+            if tb > 0 && tb <= StimParam.pulsewidth*pulseModifier % Within the active pulse window
+                if tb <= StimParam.pulsewidth % You are within the positive half of the pulse
+                    current = loc .* StimParam.magnitude;
+                elseif tb > StimParam.pulsewidth % You are within the negative half of the pulse
+                    %%% Note that if the pulseModifier is 0, this
+                    %%% conditional is never met
+                    current = -1 .* loc .* StimParam.magnitude;
+                end
             else
                 current = 0.*x(:,1);
             end
@@ -135,7 +148,7 @@ classdef StimulationExperiment < Experiment
             StimParams = cellfun(@(i)GenerateStimParam(inputs,i),idx);
             
             % CheckStimValidity to discard non-valid stimulation parameters
-            [IsValid,PulseNum,PulseWidth] = arrayfun(@(s)CheckStimValidity(s),StimParams);
+            [IsValid,PulseNum,PulseWidth] = arrayfun(@(s)CheckStimValidity(s,E),StimParams);
             
             % Discard non-valid simulation parameters/pulse numbers
             [StimParams,PulseNum,PulseWidth] = deal(StimParams(IsValid),PulseNum(IsValid),PulseWidth(IsValid));
@@ -145,6 +158,7 @@ classdef StimulationExperiment < Experiment
             
             % Create matrix of individual pulse durations/numbers and pull
             % out unique values
+            assert(all(arrayfun(@(s)strcmp(s.phaseType,StimParams(1).phaseType),StimParams)),'There appears to be more than one phaseType (i.e. monophasic vs. biphasic in your StimParams array. This will cause problems in looking for UniquePulseTrains (see code below error).')
             PulseTrains = [arrayfun(@(s)s.frequency,StimParams)...
                     arrayfun(@(s)s.magnitude,StimParams)...
                     arrayfun(@(s)s.pulsewidth,StimParams)...
@@ -170,29 +184,54 @@ classdef StimulationExperiment < Experiment
                 
             end
             
-            % Subfunction to check stimulus validity
-            function [valid,pulsenum,pulsewidth] = CheckStimValidity(ParamArray)
-                
-                % Extract parameters
-                [frequency,duration,magnitude,pulsewidth] = deal(ParamArray.frequency,ParamArray.duration,ParamArray.magnitude,ParamArray.pulsewidth);
-                
-                % For stimulation to be valid (and meaningful), the
-                % following must be true
-                valid = ...
-                    (duration > 0) && ... % Check basic nontriviality of stimulation parameters
-                    (magnitude > 0) && ...
-                    (frequency > 0) && ...
-                    (pulsewidth > 0) && ...
-                    (pulsewidth <= (1./frequency*1000)) && ... % pulsewidth cannot be longer than period of stimulation
-                    (pulsewidth <= duration*1000) && ... % pulsewidth cannot be longer than duration of stimulation (note: this ensures at least 1 pulse)
-                    (floor(duration.*frequency) >= 1) && ... % Ensure at least one pulse
-                    (((duration.*frequency - floor(duration.*frequency))./frequency*1000 >= pulsewidth) || ((duration.*frequency - floor(duration.*frequency))./frequency*1000 == 0)); % Ensure an integer number of pulses fit into the duration (avoid partial pulses; note this guarantees a second full pulse for all stimulations)
-                
-                % Return number of pulses in ParamArray
-                pulsenum = floor(duration.*frequency)+((duration.*frequency - floor(duration.*frequency))./frequency*1000 >= pulsewidth);
-                      
-            end
+        end
+
+        % Subfunction to check stimulus validity
+        function [valid,pulsenum,pulsewidth] = CheckStimValidity(ParamArray,E)
+
+            % Extract parameters
+            [frequency,duration,magnitude,pulsewidth] = deal(ParamArray.frequency,ParamArray.duration,ParamArray.magnitude,ParamArray.pulsewidth);
+
+            % Double pulse width for validity check if biphasic (to
+            % include *both* phases)
+            if strcmp(ParamArray.phaseType,'biphasic'), pulsewidth = pulsewidth*2;
+            elseif ~strcmp(ParamArray.phaseType,'monophasic'), error('Only biphasic and monophasic pulseTypes are allowed.'), end
+
+            % For stimulation to be valid (and meaningful), the
+            % following must be true
+            valid = ...
+                (duration > 0) && ... % Check basic nontriviality of stimulation parameters
+                (magnitude >= 0) && ...
+                (frequency > 0) && ...
+                (pulsewidth > 0) && ...
+                (pulsewidth <= (1./frequency*1000)) && ... % pulsewidth cannot be longer than period of stimulation
+                (pulsewidth <= duration*1000) && ... % pulsewidth cannot be longer than duration of stimulation (note: this ensures at least 1 pulse)
+                (floor(duration.*frequency) >= 1) && ... % Ensure at least one pulse
+                (((duration.*frequency - floor(duration.*frequency))./frequency*1000 >= pulsewidth) || ((duration.*frequency - floor(duration.*frequency))./frequency*1000 == 0)); % Ensure an integer number of pulses fit into the duration (avoid partial pulses; note this guarantees a second full pulse for all stimulations)
             
+            % Throw warning if magnitude 0
+            if magnitude == 0, warning('Current stimulation magnitude is set at 0'), end
+
+            % Return number of pulses in ParamArray
+            [~, pulsenum] = E.GetPulseNum(ParamArray);
+
+        end
+        
+        % Get number of pulses associated with input settings in ParamArray
+        function [ParamArray,pulsenum] = GetPulseNum(E,ParamArray)
+            % Extract parameters
+            [frequency,duration,magnitude,pulsewidth] = deal(ParamArray.frequency,ParamArray.duration,ParamArray.magnitude,ParamArray.pulsewidth);
+            
+            % Double pulse width for validity check if biphasic (to include
+            % *both* phases)
+            if strcmp(ParamArray.phaseType,'biphasic'), pulsewidth = pulsewidth*2;
+            elseif ~strcmp(ParamArray.phaseType,'monophasic'), error('Only biphasic and monophasic pulseTypes are allowed.'), end
+
+            % Return number of pulses in ParamArray
+            pulsenum = floor(duration.*frequency)+((duration.*frequency - floor(duration.*frequency))./frequency*1000 >= pulsewidth);
+            
+            % Assign pulsenum to ParamArray
+            ParamArray.pulsenum = pulsenum;
         end
             
         function e = saveobj(E)
@@ -221,6 +260,11 @@ classdef StimulationExperiment < Experiment
             Q = Simulation(E.S.param.SimulationTemplate);
             Q.param = E.S.param;
             Prepare(Q) % Prepare Q
+
+            % Overwrite default External stimulation (Ext) and UserData in
+            % Q to match E.S.O
+            Q.O.Ext = E.S.O.Ext;
+            Q.O.UserData = E.S.O.UserData;
             
             % Link new Simulation to new ThresholdExperiment
             SE.S = Q;

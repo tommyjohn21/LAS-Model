@@ -127,6 +127,7 @@ end
 
 %% Prepare input
 function PrepareInput(S) % Lay out external inputs
+
 % Basic external input functions
 S.O.Ext = ExternalInput;
 S.O.Ext.Target = S.O;
@@ -143,7 +144,13 @@ if S.param.flags.noise % Add generative background noise by default
     S.O.Ext.Random.sigma = S.param.input.Random.sigma; % unit: pA
     S.O.Ext.Random.tau_x = S.param.input.Random.tau_x./S.O.param.space_compression; % spatial constant unit: neuron index
     S.O.Ext.Random.tau_t = S.param.input.Random.tau_t./S.O.param.time_compression; % time unit: ms
+else
+    S.param.input.Random.sigma = 0; % Included for Simulation Plotting consistency
 end
+
+% Define this ExternalInput as type 'default' so you can add other 'custom'
+% ExternalInputs down the line
+S.O.Ext.UserData.ExternalInputType = 'default';
 
 end
 

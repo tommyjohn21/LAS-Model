@@ -36,7 +36,18 @@ if ~exist(E.param.expdir,'dir'), mkdir(E.param.expdir); end
 
 %%% Conditional parallel computation %%%
 % Grand data concatenation for passage in parfor
-if ~E.param.flags.SpecifyInputs, inputs = ExpandInputs(E); else, inputs = E.param.inputs; end;
+%%% Make sure each pulse train has an associated pulsenum field
+warning('You may want to add an E.InputsExpanded field to simplify this conditional for more human readable flow control (c.f. E.S.prepared)')
+if ~E.param.flags.SpecifyInputs % this is the case when you have provided parameter ranges
+    inputs = ExpandInputs(E);
+elseif any(arrayfun(@(input) ~isfield(input,'pulsenum'),E.param.inputs)) % this is the case when at least one of the input structures does not have a pulsenum field (and hasn't been validated)
+    % Assert all included input settings are valid
+    assert(all(arrayfun(@(input)CheckStimValidity(input,E),E.param.inputs)),'At least one of the inputs given in E.param.inputs is not valid. Find out which, and remove it.')
+    % Add in pulsenum field to each input
+  inputs = arrayfun(@(input) E.GetPulseNum(input),E.param.inputs);
+else % this is the case when all inputs have already been Expanded and have pulsenum fields
+    inputs = E.param.inputs; 
+end
 SE = cellfun(@(x)copy(E),num2cell(1:numel(inputs)),'un',0);
 if E.param.server || E.param.flags.parallel
     parfor (i = 1:numel(inputs)), ExecuteSimulations(SE{i},inputs(i)); end
@@ -51,8 +62,15 @@ function ExecuteSimulations(SE,input)
         S = SE.S;
         
         % Substitute local input parameters
-        SE.S.O.Ext.Deterministic = @(x,t) EvaluateStimulation(SE,input,x,t);
-                
+        for i = 1:numel(S.O.Ext)
+            if strcmp(SE.S.O.Ext(i).UserData.ExternalInputType,'default')
+                % Overwrite the 'default' ExternalInput with the input
+                % parameters defined by SE, the StimulationExperiment.
+                % leave other 'custom' ExternalInput unaltered
+                SE.S.O.Ext(i).Deterministic = @(x,t) EvaluateStimulation(SE,input,x,t);
+            end
+        end
+
         % Initialize output structures
         detector = []; % Empty detector for concatenation
         seed = []; % Empty seed container for concatenation

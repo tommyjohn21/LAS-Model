@@ -8,14 +8,16 @@ inputs = struct(...                 % Structure for Stimulation parameters
     'magnitude',200,...             % Magnitude of current: pA
     'pulsewidth',5,...              % Width of each pulse: ms
     'location',[0.475 0.525],...    % Spatial constant unit: neuron index
-    'delay',2);                     % Delay to start of Stimulation: s
+    'delay',2,...                   % Delay to start of Stimulation: s
+    'phaseType','biphasic');        % phaseTime can be biphasic or monophasic                     
 
 % Flags                            
 flags = struct(...
     'parallel',false,...            % Force use of parfor loops even if not on server
     'SpecifyInputs',true...         % Set to false if you wish to provide parameter 
     );                              %   ranges (and compute specific, valid inputs on 
-                                    %   the fly; c.f. using exact input with prespecified parameters
+                                    %   the fly; c.f. using exact input
+                                    %   with prespecified parameters)
 
 
 
