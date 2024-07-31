@@ -81,7 +81,7 @@ function EventDetector(St,x,t)
             %%% This is your second burst detection algorithm
             % event = sum(In,"all") > 50 && sum(In,"all") < 300;
             %%% This is your third burst detection algorithm
-            event = any(sum(In)>15) && sum(In,"all") < 250;
+            event = any(sum(In)>15) && sum(In(:)) < 250;
             % event = event && ((([1:size(In,1)] - size(In,1)./2)>0)-0.5)./0.5*sum(In,2)>0; % Hold if traveling wave is moving away from focus
 
             % Event detection 2.0
