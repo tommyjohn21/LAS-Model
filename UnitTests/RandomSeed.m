@@ -183,3 +183,45 @@ disp('Passed Unit Test 13')
 assert (all(V1(:)==V8(:)) && all(dW1(:)==dW8(:)),'(Re-)Run after save/load unexpectedly produced different seizures/dW matrices!')
 disp('Passed Unit Test 14')
 
+%% Unit Test 15
+% Ensure that Simulation can be (re-)Run in the instance of adjusted
+% weighting matrix
+
+% Generate Test Stimulation
+% On object construction, seed contains a random (shuffled) rng state
+X = Simulation('DefaultSimulationParameters');
+
+% Lock in pre-set seed
+X.param.flags.UsePresetSeed = true;
+
+% Enable on-the-go STDP learning
+Plasticize(X)
+
+% Generate random seed for construction of dW test matrix
+% i = sprintf('%i',randi(2^32));
+% Output from one instance of the above
+randKey = uint32(3485784485); % Use the same seed for reproducibility
+rng(randKey); % Reset RNG using randKey
+dWtest = rand([500 500]);
+
+% Add updated weighting matrix
+X.param.dW = dWtest;
+
+% Prepare Simulations and give a known seizure-inducing input
+Prepare(X)
+UpdateInput(X,'Deterministic',3);
+
+% Run and save output
+Run(X);
+[V9,dW9] = deal(V(X),X.dW);
+
+% Reset simulation, re-Run, and capture output
+Reset(X);
+Run(X);
+[V10,dW10] = deal(V(X),X.dW);
+
+% Ensure same seizure and dW matrix are gennerated by Reset/re-Run
+assert (all(V9(:)==V10(:)) && all(dW9(:)==dW10(:)),'(Re-)Run with non-naive dW matrix unexpectedly produced different seizures/dW matrices!')
+disp('Passed Unit Test 15')
+
+

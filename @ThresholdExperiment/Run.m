@@ -78,13 +78,13 @@ function [detector, seed] = Simulate(S,j,level,n)
 
     % Run the simulation
     Run(S); 
-
-    % Reset for next loop
-    Reset(S);
     
     % Collect output variables for pass up stack
     detector = S.detector; % Append detector from each simulation
     seed = S.seed; % Retain seeds used in each simulation 
+
+    % Reset for next loop
+    Reset(S);  
 
 end
 

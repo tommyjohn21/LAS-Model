@@ -4,7 +4,7 @@ function RecordExtraVar( R, VarName )
 % you can freely add more variables to record by adding new fields in the 
 % structure .Var. 
 %
-% Now the options include: 'EPSC' & 'IPSC'
+% Now the options include: 'EPSC', 'IPSC', & 'I_ext'
 % 
 % How to use it?  First, you need to AddVar(R,'Parameter'), by adding
 % the available extra variables you want to record.  Now only EPSC and IPSC
@@ -48,6 +48,12 @@ switch VarName
         % Step 2: Calculate PSCs
         E_Cl = 26.7*log(O.Cl_in./O.param.Cl_ex);                        
         R.Var.IPSC(:,R.Idx) = g .* (E_Cl-O.V) ./ O.param.f_max;
+    case {'I_ext','E','I'}
+        if O.t == 0 
+            R.Var.(VarName)(:,R.Idx) = gen_param(0,0,O.n,0); % Initialize I_ext variable to 0 at O.t == 0
+        else
+            R.Var.(VarName)(:,R.Idx) = O.UserData.UserVar.(VarName); % Otherwise, save the current state of I_ext
+        end
 end
 
 end

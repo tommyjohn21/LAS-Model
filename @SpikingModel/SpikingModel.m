@@ -26,7 +26,8 @@ classdef SpikingModel < SpikingNetwork
         V % averaged membrane potential
         phi % spiking threshold
         Cl_in % intracellular chloride concentration 
-        g_K % slow AHP conductance  
+        g_K % slow AHP conductance
+
     end
     
     properties (Constant)
@@ -123,9 +124,34 @@ classdef SpikingModel < SpikingNetwork
                 [O.Proj.Out.Value] = deal(O.S.S); % Send to .Proj.Value 'rate'
             end
             
+            % Make E/I inputs available to export in the O.UserData.UserVar
+            % field (see below for export code)
+            assert(~exist('E','var') && ~exist('I','var'),'One of the variables E or I already exists. Don''t overwrite it!');
+            
+            if O.t >= 2500 && mod(O.t,50) == 0 %~all(O.S.S==0)
+                % keyboard
+            end
+            % You may actually need to record the following to compare
+            % them:
+            % O.Input.E ./ (O.param.f_max.*dt) .* O.param.E_Esyn
+            % O.Input.I ./ (O.param.f_max.*dt) .* E_Cl  
+            E = O.Input.E;
+            I = O.Input.I;
+            % Alternatively, you may just want to look at the actual
+            % DefaultRecurrentConnection script to see maximum negative
+            % point
+
             % Filter the synaptic input (required for spiking network)          
             O.Input.E = O.Input.E.*exp(-dt./O.param.tau_syn.E);
             O.Input.I = O.Input.I.*exp(-dt./O.param.tau_syn.I);
+
+            % Export variables requested in O.UserData for Recorder
+            if isstruct(O.UserData) && isfield(O.UserData,'UserVarName')
+                for v = O.UserData.UserVarName
+                    assert(exist(v{:},'var'),['Requested variable with O.UserVarName ''' v{:} ''' is not defined'])
+                    O.UserData.UserVar.(v{:}) = eval(v{:});
+                end
+            end
             
             % Update time
             O.t = O.t + dt;
@@ -137,8 +163,10 @@ classdef SpikingModel < SpikingNetwork
         function O = SpikingModel(template)
             % Model = SpikingModel(template)
             %
-            % Final update: 2016/12/12
-            % Load parameters & initial conditions    
+            % Final update: 2024/07/11
+            % Load parameters & initial conditions
+            % Updated by TW to exclude creation of self-referential field
+            % in O.param
             eval(template);
             VarList = who;
             for i = 1:numel(VarList)
@@ -146,6 +174,8 @@ classdef SpikingModel < SpikingNetwork
                     O.(VarList{i}) = eval(VarList{i});
                 elseif strcmp(VarList{i},'n') % Size of the network
                     O.n = eval(VarList{i});                    
+                elseif isa(eval(VarList{i}),'SpikingModel') % Exclude the object from creating a self-reference in the param field
+                    continue
                 else % Parameters
                     O.param.(VarList{i}) = eval(VarList{i});
                 end              

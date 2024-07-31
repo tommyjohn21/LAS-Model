@@ -35,10 +35,12 @@ classdef Experiment < handle & matlab.mixin.Copyable
         
         % Default variable directory
         %   This is base directory for *all* experiments
-        %   Default: home directory on server, Desktop on local
+        %   Default: home directory on server, DATADIR/R25/ on local
+        %%% DATADIR is set in the Matlab startup.m script via:
+        %%% setenv("DATADIR",'/path/to/DATADIR');
         function vardir = VarDir(E)
             vardir = '~/'; % Def
-            if ~Server(E), vardir = [vardir 'Desktop/']; end
+            if ~Server(E), vardir = [vardir getenv("DATADIR") 'R25/']; end
         end
         
         % Default experiment directory
@@ -50,7 +52,7 @@ classdef Experiment < handle & matlab.mixin.Copyable
         % Update variable and experiment directories as needed
         function UpdateDir(E,vardir)
             vardir = ['~/' vardir '/']; % Default
-            if ~Server(E), vardir = strrep(vardir,'~/','~/Desktop/'); end
+            if ~Server(E), vardir = strrep(vardir,'~/',[getenv("DATADIR") 'R25/']); end
             E.param.vardir = vardir;
             E.param.expdir = [vardir E.param.name '/'];
         end

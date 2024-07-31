@@ -12,6 +12,12 @@ dt = S.param.dt; % ms
 R = CreateRecorder(O,round(S.param.duration)); % The 2nd argument is Recorder.Capacity
 T_end = R.Capacity - 1; % simulation end time.
 
+%%% Add custom user variables to record (if any)
+if isstruct(O.UserData) && isfield(O.UserData,'UserVarName')
+    cellfun(@(v)AddVar(R,v),O.UserData.UserVarName)
+    for v = O.UserData.UserVarName, O.UserData.UserVar.(v{:}) = [];  end
+end
+
 %%% Assert that seed for Simulation is correct (AdjustSeed if needed)
 if isfield(S.param.flags,'UsePresetSeed'), AdjustSeed(S), end
 CurrentRNG = rng;
